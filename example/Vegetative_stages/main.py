@@ -61,7 +61,7 @@ def save_df_to_csv(df, outputs_filepath, precision):
 
 
 def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
-         option_static=False, show_3Dplant=True, tillers_replications=None, heterogeneous_canopy=True,
+         option_static=False, show_3Dplant=True, tillers_replications=True, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo.csv',
          OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
@@ -195,7 +195,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     START_TIME = max(0, new_start_time)
 
     # Name of the CSV files which contains the meteo data
-    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t')
+    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t', sep=';')
 
     # -- OUTPUTS CONFIGURATION --
 
@@ -1020,4 +1020,5 @@ if __name__ == '__main__':
          show_3Dplant=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
+        #heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
          PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
