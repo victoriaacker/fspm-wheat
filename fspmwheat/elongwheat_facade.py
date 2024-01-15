@@ -366,29 +366,29 @@ class ElongWheatFacade(object):
                                 for organ_data_name in mtg_elements_data_from_organ_data:
                                     self._shared_mtg.property(organ_data_name)[mtg_element_vid] = mtg_elements_data_from_organ_data[organ_data_name]
 
-                        # # update of organ scale from elements
-                        # new_mtg_element_labels = {}
-                        # for new_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
-                        #     new_element_label = self._shared_mtg.label(new_element_vid)
-                        #     new_mtg_element_labels[new_element_label] = new_element_vid
-                        #
-                        # if mtg_organ_label == 'blade' and 'LeafElement1' in new_mtg_element_labels.keys():
-                        #     organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['LeafElement1']]
-                        #     self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
-                        #     self._shared_mtg.property('age')[mtg_organ_vid] = self._shared_mtg.property('age').get(new_mtg_element_labels['LeafElement1'], 0)
-                        # elif mtg_organ_label in ('sheath', 'internode') and 'StemElement' in new_mtg_element_labels.keys():
-                        #     organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
-                        #     self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
-                        # else:
-                        #     organ_visible_length = 0
-                        #
-                        # if 'HiddenElement' in new_mtg_element_labels.keys():
-                        #     organ_hidden_length = self._shared_mtg.property('length')[new_mtg_element_labels['HiddenElement']]
-                        # else:
-                        #     organ_hidden_length = 0
-                        #
-                        # total_organ_length = organ_visible_length + organ_hidden_length
-                        # self._shared_mtg.property('length')[mtg_organ_vid] = total_organ_length
+                        # update of organ scale from elements
+                        new_mtg_element_labels = {}
+                        for new_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
+                            new_element_label = self._shared_mtg.label(new_element_vid)
+                            new_mtg_element_labels[new_element_label] = new_element_vid
+
+                        if mtg_organ_label == 'blade' and 'LeafElement1' in new_mtg_element_labels.keys():
+                            organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['LeafElement1']]
+                            self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
+                            self._shared_mtg.property('age')[mtg_organ_vid] = self._shared_mtg.property('age').get(new_mtg_element_labels['LeafElement1'], 0)
+                        elif mtg_organ_label in ('sheath', 'internode') and 'StemElement' in new_mtg_element_labels.keys():
+                            organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
+                            self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
+                        else:
+                            organ_visible_length = 0
+
+                        if 'HiddenElement' in new_mtg_element_labels.keys():
+                            organ_hidden_length = self._shared_mtg.property('length')[new_mtg_element_labels['HiddenElement']]
+                        else:
+                            organ_hidden_length = 0
+
+                        total_organ_length = organ_visible_length + organ_hidden_length
+                        self._shared_mtg.property('length')[mtg_organ_vid] = total_organ_length
 
     def _update_shared_dataframes(self, elongwheat_hiddenzones_data_df, elongwheat_elements_data_df, elongwheat_axes_data_df):
         """

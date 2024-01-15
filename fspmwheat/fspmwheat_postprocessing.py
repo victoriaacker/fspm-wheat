@@ -208,6 +208,7 @@ def table_C_usages(scenario_postprocessing_dirpath):
 
     df_roots = df_org[df_org['organ'] == 'roots'].copy()
     df_phloem = df_org[df_org['organ'] == 'phloem'].copy()
+    df_xylem = df_org[df_org['organ'] == 'xylem'].copy()
 
     # --- C usages relatif to Net Photosynthesis
     AMINO_ACIDS_C_RATIO = cnwheat_model.EcophysiologicalConstants.AMINO_ACIDS_C_RATIO  #: Mean number of mol of C in 1 mol of the major amino acids of plants (Glu, Gln, Ser, Asp, Ala, Gly)
