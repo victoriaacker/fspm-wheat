@@ -366,6 +366,10 @@ class ElongWheatFacade(object):
                                 for organ_data_name in mtg_elements_data_from_organ_data:
                                     self._shared_mtg.property(organ_data_name)[mtg_element_vid] = mtg_elements_data_from_organ_data[organ_data_name]
 
+                            # Deleting hidden elements (very small), after coupling turgorgrowth and elongwheat (16.01.2024)
+                            elif (element_label in mtg_element_labels) and (self._shared_mtg.property('length').get(mtg_element_labels[element_label], False)):
+                                self._shared_mtg.property('length')[mtg_element_labels[element_label]] = 0
+
                         # update of organ scale from elements
                         new_mtg_element_labels = {}
                         for new_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):

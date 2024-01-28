@@ -6,6 +6,7 @@ import random
 import time
 import warnings
 
+import aspose.words as aw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
@@ -62,10 +63,21 @@ def save_df_to_csv(df, outputs_filepath, precision):
         warnings.warn('File will be saved at {}'.format(newpath))
 
 
+def force_inputs(t, turgorgrowth_facade_, hiddenzones_data_grouped):
+    """Force input data of the population at `t` from input grouped dataframes"""
+    for plant in turgorgrowth_facade_.population.plants:
+        for axis in plant.axes:
+            for phytomer in axis.phytomers:
+                if phytomer.hiddenzone:
+                    group_hiddenzone = hiddenzones_data_grouped.get_group((t, plant.index, axis.label, phytomer.index))
+                    hiddenzone_data_to_use = group_hiddenzone.loc[group_hiddenzone.first_valid_index(),
+                                                                  group_hiddenzone.columns.intersection(turgorgrowth_facade_._simulation.HIDDENZONE_STATE)].dropna().to_dict()
+                    phytomer.hiddenzone.__dict__.update(hiddenzone_data_to_use)
+
 def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
          option_static=False, show_3Dplant=True, tillers_replications=True, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_simple.csv',
+         INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_simple.csv',
          # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
          OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs'):
@@ -151,6 +163,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     METEO_FORCINGS_FILENAME = 'meteo_Ljutovac2002.csv'
     METEO_SIMPLE_FORCINGS_FILENAME = 'meteo_simple.csv'
 
+    # Name of the CSV files which describes the forcings values of hiddenzone
+    # Sucrose, amino acids and proteins for osmotic water potential calculation
+    HIDDENZONES_FORCINGS_FILENAME = 'hiddenzones_forcings.csv'
+
     # Read the inputs from CSV files and create inputs dataframes
     inputs_dataframes = {}
     if run_from_outputs:
@@ -205,11 +221,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     START_TIME = max(0, new_start_time)
 
     # Name of the CSV files which contains the meteo data
-    # meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), index_col='t', sep=';')
-    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_SIMPLE_FORCINGS_FILENAME), index_col='t', sep=',')
-
-    # Name of the CSV files which contains the osmotic elements data for hiddenzone
-    osmotic_water_potential = pd.read_csv(os.path.join(INPUTS_DIRPATH, HIDDENZONES_INITIAL_STATE_FILENAME), sep=',')
+    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), index_col='t', sep=';')
+    # meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_SIMPLE_FORCINGS_FILENAME), index_col='t', sep=',')
 
     # -- OUTPUTS CONFIGURATION --
 
@@ -530,10 +543,14 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                 adel_wheat.plot(g)
 
                             for t_turgorgrowth in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP, TURGORGROWTH_TIMESTEP):
+                                # Forcings sucrose, amino_acids and proteins data from initial data inputs file
+                                hiddenzones_data_filepath = os.path.join(INPUTS_DIRPATH, HIDDENZONES_FORCINGS_FILENAME)
+                                hiddenzones_data_df = pd.read_csv(hiddenzones_data_filepath)
+                                hiddenzones_data_grouped = hiddenzones_data_df.groupby(turgorgrowth_facade_._simulation.HIDDENZONE_T_INDEXES)
+                                # force_inputs(0, turgorgrowth_facade_, hiddenzones_data_grouped)
+
                                 SRWC, temperature = meteo.loc[t_turgorgrowth, ['SRWC', 'air_temperature']]
-                                sucrose, amino_acids, proteins = osmotic_water_potential.loc[t_turgorgrowth, ['sucrose', 'amino_acids', 'proteins']]
-                                # turgorgrowth_facade_.run(SRWC)
-                                turgorgrowth_facade_.run(SRWC, sucrose, amino_acids, proteins)
+                                turgorgrowth_facade_.run(SRWC)
 
                                 for t_growthwheat in range(t_turgorgrowth, t_turgorgrowth + TURGORGROWTH_TIMESTEP, GROWTHWHEAT_TIMESTEP):
                                     # run GrowthWheat
@@ -768,6 +785,45 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey', 'lime']
         colors = colors + colors
 
+        # 9) Extensibility in three-dimensions :
+        df_hz_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
+        phi_width = df_hz_outputs.groupby(['t', 'metamer'])['phi_width'].agg("mean")
+        phi_thickness = df_hz_outputs.groupby(['t', 'metamer'])['phi_thickness'].agg("mean")
+        phi_length = df_hz_outputs.groupby(['t', 'metamer'])['phi_length'].agg("mean")
+
+        fig, ax = plt.subplots()
+        line1 = ax.plot(phi_width.t, phi_width.phi_width, label=u'phi_width', color=phi_width.metamer, linestyle='solid')
+        line2 = ax.plot(phi_thickness.t, phi_thickness.phi_thickness, label=u'phi_thickness', color=phi_thickness.metamer, linestyle='dashed')
+        line3 = ax.plot(phi_length.t, phi_length.phi_length, label=u'phi_length', color=phi_length.metamer, linestyle='dotted')
+
+        lines = line1 + line2 + line3
+        labs = [line.get_label() for line in lines]
+        ax.legend(lines, labs, loc='center left', prop={'size': 10}, framealpha=0.5, bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+
+        ax.set_xlabel('t')
+        ax.set_ylabel(u'phi')
+        ax.set_title('phi in 3-dimensions')
+        plt.tight_layout()
+        graph_name = 'phi_3_dimensions.PNG'
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, graph_name), dpi=200, format='PNG', bbox_inches='tight')
+
+        for i in metamer:
+            fig, ax = plt.subplots()
+            line1 = ax.plot(t, phi_width, label=u'phi_width', linestyle='solid')
+            line2 = ax.plot(t, phi_thickness, label=u'phi_thickness', linestyle='dashed')
+            line3 = ax.plot(t, phi_length, label=u'phi_length', linestyle='dotted')
+
+            lines = line1 + line2 + line3
+            labs = [line.get_label() for line in lines]
+            ax.legend(lines, labs, loc='center left', prop={'size': 10}, framealpha=0.5, bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+
+            ax.set_xlabel('t')
+            ax.set_ylabel(u'phi')
+            ax.set_title('phi in 3-dimensions')
+            plt.tight_layout()
+            graph_name = 'phi_metamer_' + i + '.PNG'
+            plt.savefig(os.path.join(GRAPHS_DIRPATH, graph_name), dpi=200, format='PNG', bbox_inches='tight')
+
         # 8) Stomatal conductance models : gsw (Ball), gs_CO2 (Tuzet), gs_w (Wolf)
         df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.axis == 'MS']
@@ -873,6 +929,30 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         ax.legend((line1[0], line2[0]), ('Simulation', 'Ljutovac 2002'), loc=2)
         plt.savefig(os.path.join(GRAPHS_DIRPATH, var + '.PNG'))
         plt.close()
+
+        # TEST
+        #: Save to pdf "important" graphs to analyze
+        # Graphs repertory
+        dir = GRAPHS_DIRPATH
+        # List of graphs
+        fileNames = ["leaf_Lmax.PNG", "leaf_L_hz.PNG", "length_blade.PNG", "length_hz.PNG", "length_sheath.PNG", "leaf_pseudostem_length_hz.PNG",
+                     "width_blade.PNG", "width_hz.PNG", "width_sheath.PNG", "thickness_blade.PNG", "thickness_hz.PNG", "thickness_sheath.PNG",
+                     "total_water_potential_blade.PNG", "total_water_potential_hz.PNG", "total_water_potential_sheath.PNG",
+                     "osmotic_water_potential_blade.PNG", "osmotic_water_potential_hz.PNG", "osmotic_water_potential_sheath.PNG",
+                     "water_content_blade.PNG", "water_content_hz.PNG", "water_content_sheath.PNG",
+                     "Conc_Amino_Acids_phloem.PNG", "Conc_Sucrose_phloem.PNG", "plant_WC_DM"]
+        # Creation of a word document
+        doc = aw.Document()
+        # Creation of a doc generator
+        builder = aw.DocumentBuilder(doc)
+        # Loop through graphs in folder
+        for imageFile in fileNames:
+            # Insertion of graph into the document
+            builder.insert_image(os.path.join(dir, imageFile))
+            # Insert a paragraph break to avoid graphs overlapping
+            builder.writeln()
+        # Saving in pdf format
+        doc.save(os.path.join(GRAPHS_DIRPATH, 'graphs.pdf'))
 
         # # 1bis) Comparison Structural Masses vs. adaptation from Bertheloot 2008
         #
@@ -1167,12 +1247,11 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                                   plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
                                                   explicit_label=False)
 
-
 if __name__ == '__main__':
-         main(50, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+         main(10, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
          show_3Dplant=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
          # heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
-         # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
-         PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')
+         PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
+         # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')

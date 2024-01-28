@@ -109,13 +109,12 @@ class TurgorGrowthFacade(object):
                                            turgorgrowth_organs_data_df=model_organs_inputs_df,
                                            turgorgrowth_soil_data_df=model_soil_inputs_df)
 
-    # def run(self, SRWC=80, update_shared_df=False):
-    def run(self, SRWC, sucrose, amino_acids, proteins, update_shared_df=False):
+    def run(self, SRWC=80, update_shared_df=False):
 
         """
         Run the model and update the MTG and the dataframes shared between all models.
         """
-        self._initialize_model(SRWC=SRWC, sucrose=sucrose, amino_acids=amino_acids, proteins=proteins)
+        self._initialize_model(SRWC=SRWC)
         self._simulation.run()
         self._update_shared_MTG()
 
@@ -158,7 +157,7 @@ class TurgorGrowthFacade(object):
         """
         turgorgrowth_postprocessing.generate_graphs(axes_df=axes_postprocessing_df, hiddenzones_df=hiddenzones_postprocessing_df, elements_df=elements_postprocessing_df, organs_df=organs_postprocessing_df, graphs_dirpath=graphs_dirpath)
 
-    def _initialize_model(self, SRWC=80, sucrose=sucrose, amino_acids=amino_acids, proteins=proteins):
+    def _initialize_model(self, SRWC=80):
         """
         Initialize the inputs of the model from the MTG shared between all models and the soils.
         """
@@ -307,8 +306,7 @@ class TurgorGrowthFacade(object):
             if is_valid_plant:
                 self.population.plants.append(turgorgrowth_plant)
 
-        #self._simulation.initialize(self.population, mapping_topology, SRWC=SRWC)
-        self._simulation.initialize(self.population, mapping_topology, SRWC=SRWC, sucrose = sucrose, amino_acids = amino_acids, proteins = proteins)
+        self._simulation.initialize(self.population, mapping_topology, SRWC=SRWC)
 
     def _update_shared_MTG(self):
         """
@@ -403,7 +401,7 @@ class TurgorGrowthFacade(object):
                             self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
                         elif mtg_organ_label == 'sheath' and 'StemElement' in new_mtg_element_labels.keys():
                             organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
-                            ## TO DO : BOXE OR CYLINDER ???
+                            # TO DO : BOXE OR CYLINDER ?
                             # self._shared_mtg.property('diameter')[mtg_organ_vid] = self._shared_mtg.property('width')[new_mtg_element_labels['StemElement']] / pi
                             self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
                         elif mtg_organ_label == 'internode' and 'StemElement' in new_mtg_element_labels.keys():
@@ -428,8 +426,8 @@ class TurgorGrowthFacade(object):
         for turgorgrowth_data_df, \
             shared_inputs_outputs_indexes, \
             shared_inputs_outputs_df in ((turgorgrowth_axes_data_df, turgorgrowth_simulation.Simulation.AXES_INDEXES, self._shared_axes_inputs_outputs_df),
-                                         (turgorgrowth_hiddenzones_data_df, turgorgrowth_simulation.Simulation.HIDDENZONE_INDEXES, self._shared_hiddenzones_inputs_outputs_df),
-                                         (turgorgrowth_elements_data_df, turgorgrowth_simulation.Simulation.ELEMENTS_INDEXES, self._shared_elements_inputs_outputs_df),
+                                         (turgorgrowth_hiddenzones_data_df, turgorgrowth_simulation.Simulation.HIDDENZONES_INDEXES, self._shared_hiddenzones_inputs_outputs_df),
+                                         (turgorgrowth_element_data_df, turgorgrowth_simulation.Simulation.ELEMENTS_INDEXES, self._shared_elements_inputs_outputs_df),
                                          (turgorgrowth_organs_data_df, turgorgrowth_simulation.Simulation.ORGANS_INDEXES, self._shared_organs_inputs_outputs_df),
                                          (turgorgrowth_soil_data_df, turgorgrowth_simulation.Simulation.SOIL_INDEXES, self._shared_soil_inputs_outputs_df)):
             # if turgorgrowth_data_df is None: continue
