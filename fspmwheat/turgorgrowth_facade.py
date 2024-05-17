@@ -90,7 +90,7 @@ class TurgorGrowthFacade(object):
 
         self._simulation = turgorgrowth_simulation.Simulation(delta_t=delta_t)
 
-        self.population, mapping_topology = turgorgrowth_converter.from_dataframes(model_hiddenzones_inputs_df, model_elements_inputs_df, model_organs_inputs_df, model_soil_inputs_df)
+        self.population, mapping_topology = turgorgrowth_converter.from_dataframes(model_axes_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_organs_inputs_df, model_soil_inputs_df)
 
         self._simulation.initialize(self.population, mapping_topology)
 
@@ -227,7 +227,6 @@ class TurgorGrowthFacade(object):
                         mtg_hiddenzone_properties = mtg_metamer_properties[mtg_hiddenzone_label]
                         # turgorgrowth_hiddenzone_data_names = set(turgorgrowth_simulation.Simulation.HIDDENZONE_STATE).intersection(turgorgrowth_hiddenzone.__dict__)
                         # Adding aggregated variables into inputs
-                        # turgorgrowth_hiddenzone_data_names = set(turgorgrowth_simulation.Simulation.HIDDENZONE_STATE + turgorgrowth_simulation.Simulation.HIDDENZONE_FLUXES).intersection(turgorgrowth_hiddenzone.__dict__)
                         turgorgrowth_hiddenzone_data_names = set(turgorgrowth_simulation.Simulation.HIDDENZONE_RUN_VARIABLES).intersection(turgorgrowth_hiddenzone.__dict__)
                         if mtg_hiddenzone_properties.get('leaf_pseudo_age') == 0:  # First time hiddenzone passes into turgorgrowth model
                             missing_initial_hiddenzone_properties = turgorgrowth_hiddenzone_data_names - set(mtg_hiddenzone_properties)
@@ -249,6 +248,8 @@ class TurgorGrowthFacade(object):
                     has_valid_organ = False
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
+                        if mtg_organ_label == "internode":  # No internode in turgor-growth model
+                            continue
                         if mtg_organ_label not in MTG_TO_TURGORGROWTH_PHYTOMERS_ORGANS_MAPPING or self._shared_mtg.get_vertex_property(mtg_organ_vid)['length'] == 0:
                             continue
                         turgorgrowth_organ_class = MTG_TO_TURGORGROWTH_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]
@@ -268,13 +269,16 @@ class TurgorGrowthFacade(object):
                                     or (self._shared_mtg.get_vertex_property(mtg_element_vid)['length'] == 0) \
                                     or ((mtg_element_label == 'HiddenElement') and (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_growing', True))):
                                 continue
+
+                            #: No senescent organs into turgor-growth sub-model
+                            if (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_over', True)):
+                                continue
+
                             has_valid_element = True
                             turgorgrowth_element = TURGORGROWTH_ORGANS_TO_ELEMENTS_MAPPING[turgorgrowth_organ_class](label=mtg_element_label)
                             mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
                             # turgorgrowth_element_data_names = set(turgorgrowth_simulation.Simulation.ELEMENTS_STATE).intersection(turgorgrowth_element.__dict__)
-                            # Adding aggregated variables into inputs
-                            # turgorgrowth_element_data_names = set(turgorgrowth_simulation.Simulation.ELEMENTS_STATE + turgorgrowth_simulation.Simulation.ELEMENTS_FLUXES).intersection(turgorgrowth_element.__dict__)
-                            turgorgrowth_element_data_names = set(turgorgrowth_simulation.Simulation.ELEMENTS_RUN_VARIABLES).intersection(turgorgrowth_element.__dict__)
+                            turgorgrowth_element_data_names = set(turgorgrowth_simulation.Simulation.ELEMENTS_RUN_VARIABLES).intersection(turgorgrowth_element.__dict__)    #: Adding aggregated variables into inputs
                             if mtg_element_properties.get('age') == 0:  # First time element passes into turgorgrowth model
                                 missing_initial_element_properties = turgorgrowth_element_data_names - set(mtg_element_properties)
                                 turgorgrowth_element_data_names -= missing_initial_element_properties
@@ -338,9 +342,7 @@ class TurgorGrowthFacade(object):
                         break
 
                 # : __________________________________________________________________________________________________________________________
-
                 # XYLEM
-
                 turgorgrowth_axis_property_names = [property_name for property_name in turgorgrowth_simulation.Simulation.AXES_RUN_VARIABLES if hasattr(turgorgrowth_axis, property_name)]
                 for turgorgrowth_axis_property_name in turgorgrowth_axis_property_names:
                     turgorgrowth_axis_property_value = getattr(turgorgrowth_axis, turgorgrowth_axis_property_name)
@@ -357,7 +359,6 @@ class TurgorGrowthFacade(object):
                         if hasattr(turgorgrowth_organ, turgorgrowth_property_name):
                             mtg_organ_properties[turgorgrowth_property_name] = getattr(turgorgrowth_organ, turgorgrowth_property_name)
                 mtg_metamers_iterator = self._shared_mtg.components_iter(mtg_axis_vid)
-
                 # : __________________________________________________________________________________________________________________________
 
                 for turgorgrowth_phytomer in turgorgrowth_axis.phytomers:
@@ -376,6 +377,8 @@ class TurgorGrowthFacade(object):
                         mtg_hiddenzone_properties.update(turgorgrowth_phytomer.hiddenzone.__dict__)
                     for mtg_organ_vid in self._shared_mtg.components_iter(mtg_metamer_vid):
                         mtg_organ_label = self._shared_mtg.label(mtg_organ_vid)
+                        if mtg_organ_label == "internode":  # No internode in turgor-growth model
+                            continue
                         if mtg_organ_label not in MTG_TO_TURGORGROWTH_PHYTOMERS_ORGANS_MAPPING: continue
                         turgorgrowth_organ = getattr(turgorgrowth_phytomer, TURGORGROWTH_ATTRIBUTES_MAPPING[MTG_TO_TURGORGROWTH_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]])
                         if turgorgrowth_organ is None:
@@ -383,7 +386,15 @@ class TurgorGrowthFacade(object):
                         # element scale
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
+
+                            #: No senescent organs into MTG
+                            if (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_over', True)):
+                                turgorgrowth_element_property_names = [property_name for property_name in turgorgrowth_simulation.Simulation.ELEMENTS_RUN_VARIABLES]
+                                for turgorgrowth_element_property_name in turgorgrowth_element_property_names:
+                                    self._shared_mtg.property(turgorgrowth_element_property_name)[mtg_element_vid] = 0
+
                             if mtg_element_label not in turgorgrowth_converter.DATAFRAME_TO_TURGORGROWTH_ELEMENTS_NAMES_MAPPING: continue
+
                             turgorgrowth_element = getattr(turgorgrowth_organ, turgorgrowth_converter.DATAFRAME_TO_TURGORGROWTH_ELEMENTS_NAMES_MAPPING[mtg_element_label])
                             turgorgrowth_element_property_names = [property_name for property_name in turgorgrowth_simulation.Simulation.ELEMENTS_RUN_VARIABLES if hasattr(turgorgrowth_element, property_name)]
                             for turgorgrowth_element_property_name in turgorgrowth_element_property_names:
@@ -401,19 +412,19 @@ class TurgorGrowthFacade(object):
                             self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
                         elif mtg_organ_label == 'sheath' and 'StemElement' in new_mtg_element_labels.keys():
                             organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
-                            # TO DO : BOXE OR CYLINDER ?
-                            # self._shared_mtg.property('diameter')[mtg_organ_vid] = self._shared_mtg.property('width')[new_mtg_element_labels['StemElement']] / pi
                             self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
-                        elif mtg_organ_label == 'internode' and 'StemElement' in new_mtg_element_labels.keys():
-                            organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
-                            self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
+                        # elif mtg_organ_label == 'internode' and 'StemElement' in new_mtg_element_labels.keys():
+                        #     organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
+                        #     self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
                         else:
                             organ_visible_length = 0
 
-                        if 'HiddenElement' in new_mtg_element_labels.keys():
-                            organ_hidden_length = self._shared_mtg.property('length')[new_mtg_element_labels['HiddenElement']]
-                        else:
-                            organ_hidden_length = 0
+                        # if 'HiddenElement' in new_mtg_element_labels.keys():
+                        #     organ_hidden_length = self._shared_mtg.property('length')[new_mtg_element_labels['HiddenElement']]
+                        # else:
+                        #     organ_hidden_length = 0
+
+                        organ_hidden_length = 0
 
                         total_organ_length = organ_visible_length + organ_hidden_length
                         self._shared_mtg.property('length')[mtg_organ_vid] = total_organ_length
@@ -427,7 +438,7 @@ class TurgorGrowthFacade(object):
             shared_inputs_outputs_indexes, \
             shared_inputs_outputs_df in ((turgorgrowth_axes_data_df, turgorgrowth_simulation.Simulation.AXES_INDEXES, self._shared_axes_inputs_outputs_df),
                                          (turgorgrowth_hiddenzones_data_df, turgorgrowth_simulation.Simulation.HIDDENZONES_INDEXES, self._shared_hiddenzones_inputs_outputs_df),
-                                         (turgorgrowth_element_data_df, turgorgrowth_simulation.Simulation.ELEMENTS_INDEXES, self._shared_elements_inputs_outputs_df),
+                                         (turgorgrowth_elements_data_df, turgorgrowth_simulation.Simulation.ELEMENTS_INDEXES, self._shared_elements_inputs_outputs_df),
                                          (turgorgrowth_organs_data_df, turgorgrowth_simulation.Simulation.ORGANS_INDEXES, self._shared_organs_inputs_outputs_df),
                                          (turgorgrowth_soil_data_df, turgorgrowth_simulation.Simulation.SOIL_INDEXES, self._shared_soil_inputs_outputs_df)):
             # if turgorgrowth_data_df is None: continue
