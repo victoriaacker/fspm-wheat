@@ -25,7 +25,6 @@ from fspmwheat import growthwheat_facade
 from fspmwheat import senescwheat_facade
 from fspmwheat import turgorgrowth_facade
 
-
 """
     main
     ~~~~
@@ -64,13 +63,15 @@ def save_df_to_csv(df, outputs_filepath, precision):
         warnings.warn('File will be saved at {}'.format(newpath))
 
 
-def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
+def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True,
+         run_from_outputs=False, stored_times=None,
          option_static=False, show_3Dplant=True, tillers_replications=True, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_simple.csv',
          # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs', GRAPHS_COMPARISON_DIRPATH='graphs_comparison'):
+         OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
+         GRAPHS_COMPARISON_DIRPATH='graphs_comparison'):
     """
     Run a simulation of fspmwheat with coupling to several models
 
@@ -137,6 +138,12 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     ELEMENTS_OUTPUTS_FILENAME = 'elements_outputs.csv'
     SOILS_OUTPUTS_FILENAME = 'soils_outputs.csv'
 
+    # Do log the execution?
+    LOG_EXECUTION = False
+
+    # Config file path for logging
+    LOGGING_CONFIG_FILEPATH = 'logging.json'
+
     # -- INPUTS CONFIGURATION --
 
     # Path of the directory which contains the inputs of the model
@@ -163,20 +170,23 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         previous_outputs_dataframes = {}
 
-        for initial_state_filename, outputs_filename, index_columns in ((AXES_INITIAL_STATE_FILENAME, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
-                                                                        (ORGANS_INITIAL_STATE_FILENAME, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
-                                                                        (HIDDENZONES_INITIAL_STATE_FILENAME, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
-                                                                        (ELEMENTS_INITIAL_STATE_FILENAME, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
-                                                                        (SOILS_INITIAL_STATE_FILENAME, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
+        for initial_state_filename, outputs_filename, index_columns in (
+                (AXES_INITIAL_STATE_FILENAME, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
+                (ORGANS_INITIAL_STATE_FILENAME, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                (HIDDENZONES_INITIAL_STATE_FILENAME, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                (ELEMENTS_INITIAL_STATE_FILENAME, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                (SOILS_INITIAL_STATE_FILENAME, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
 
             previous_outputs_dataframe = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, outputs_filename))
             # Convert NaN to None
-            previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframe.where(previous_outputs_dataframe.notnull(), None)
+            previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframe.where(
+                previous_outputs_dataframe.notnull(), None)
 
             assert 't' in previous_outputs_dataframes[outputs_filename].columns
             if forced_start_time > 0:
                 new_start_time = forced_start_time + 1
-                previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframes[outputs_filename][previous_outputs_dataframes[outputs_filename]['t'] <= forced_start_time]
+                previous_outputs_dataframes[outputs_filename] = previous_outputs_dataframes[outputs_filename][
+                    previous_outputs_dataframes[outputs_filename]['t'] <= forced_start_time]
             else:
                 last_t_step = max(previous_outputs_dataframes[outputs_filename]['t'])
                 new_start_time = last_t_step + 1
@@ -186,12 +196,15 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 new_initial_state = elements_previous_outputs[~elements_previous_outputs.is_over.isnull()]
             else:
                 new_initial_state = previous_outputs_dataframes[outputs_filename]
-            idx = new_initial_state.groupby([col for col in index_columns if col != 't'])['t'].transform(max) == new_initial_state['t']
+            idx = new_initial_state.groupby([col for col in index_columns if col != 't'])['t'].transform(max) == \
+                  new_initial_state['t']
             inputs_dataframes[initial_state_filename] = new_initial_state[idx].drop(['t'], axis=1)
 
         # Make sure boolean columns have either type bool or float
-        bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing', 'internode_is_growing', 'leaf_is_remobilizing', 'internode_is_remobilizing']
-        for df in [inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME], inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME]]:
+        bool_columns = ['is_over', 'is_growing', 'leaf_is_emerged', 'internode_is_visible', 'leaf_is_growing',
+                        'internode_is_growing', 'leaf_is_remobilizing', 'internode_is_remobilizing']
+        for df in [inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME],
+                   inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME]]:
             for cln in bool_columns:
                 if cln in df.keys():
                     df[cln].replace(to_replace='False', value=0.0, inplace=True)
@@ -259,16 +272,38 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     # ----- CONFIGURATION OF THE FACADES -------
     # ---------------------------------------------
 
+    # if LOG_EXECUTION:
+    #     from cnwheat import tools as cnwheat_tools
+    #     import logging
+    #     # Setup the logging
+    #     cnwheat_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=logging.DEBUG,
+    #                                log_model=True, log_compartments=True, log_derivatives=True, remove_old_logs=True)
+
+    if LOG_EXECUTION:
+        from turgorgrowth import tools as turgor_tools
+        import logging
+        # Setup the logging
+        turgor_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=logging.DEBUG,
+                                   log_model=True, log_compartments=True, log_derivatives=True, remove_old_logs=True)
+
+
     # -- ELONGWHEAT (created first because it is the only facade to add new metamers) --
     # Initial states
     elongwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
-        elongwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.HIDDENZONE_INPUTS if i in
-                                                                   inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+        elongwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS + [i for i in
+                                                                   elongwheat_facade.simulation.HIDDENZONE_INPUTS if
+                                                                   i in
+                                                                   inputs_dataframes[
+                                                                       HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
     elongwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
-        elongwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.ELEMENT_INPUTS if i in
-                                                                inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+        elongwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.ELEMENT_INPUTS
+                                                                if i in
+                                                                inputs_dataframes[
+                                                                    ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
     elongwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
-        elongwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.AXIS_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+        elongwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS + [i for i in elongwheat_facade.simulation.AXIS_INPUTS if
+                                                             i in inputs_dataframes[
+                                                                 AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
     phytoT_df = pd.read_csv(os.path.join(INPUTS_DIRPATH, 'phytoT.csv'))
 
@@ -294,19 +329,20 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     # -- TURGORGROWTH --
     # Initial states
     turgorgrowth_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
-        [i for i in turgorgrowth_facade.turgorgrowth_converter.AXES_VARIABLES if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in turgorgrowth_facade.turgorgrowth_converter.AXES_VARIABLES if
+         i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
     turgorgrowth_organs_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME][
-        [i for i in turgorgrowth_facade.turgorgrowth_converter.ORGANS_VARIABLES if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in turgorgrowth_facade.turgorgrowth_converter.ORGANS_VARIABLES if
+         i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
 
     turgorgrowth_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
-        [i for i in turgorgrowth_facade.turgorgrowth_converter.HIDDENZONE_VARIABLES if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in turgorgrowth_facade.turgorgrowth_converter.HIDDENZONE_VARIABLES if
+         i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
 
     turgorgrowth_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
-        [i for i in turgorgrowth_facade.turgorgrowth_converter.ELEMENTS_VARIABLES if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
-
-    turgorgrowth_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
-        [i for i in turgorgrowth_facade.turgorgrowth_converter.SOIL_VARIABLES if i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in turgorgrowth_facade.turgorgrowth_converter.ELEMENTS_VARIABLES if
+         i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
 
     # Update parameters if specified
     if update_parameters_all_models and 'turgorgrowth' in update_parameters_all_models:
@@ -316,18 +352,16 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
     # Facade initialisation
     turgorgrowth_facade_ = turgorgrowth_facade.TurgorGrowthFacade(g,
-                                                   TURGORGROWTH_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
-                                                   turgorgrowth_axes_initial_state,
-                                                   turgorgrowth_hiddenzones_initial_state,
-                                                   turgorgrowth_elements_initial_state,
-                                                   turgorgrowth_organs_initial_state,
-                                                   turgorgrowth_soils_initial_state,
-                                                   shared_axes_inputs_outputs_df,
-                                                   shared_hiddenzones_inputs_outputs_df,
-                                                   shared_elements_inputs_outputs_df,
-                                                   shared_organs_inputs_outputs_df,
-                                                   shared_soils_inputs_outputs_df,
-                                                   update_shared_df=UPDATE_SHARED_DF)
+                                                                  TURGORGROWTH_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                                  turgorgrowth_axes_initial_state,
+                                                                  turgorgrowth_hiddenzones_initial_state,
+                                                                  turgorgrowth_elements_initial_state,
+                                                                  turgorgrowth_organs_initial_state,
+                                                                  shared_axes_inputs_outputs_df,
+                                                                  shared_hiddenzones_inputs_outputs_df,
+                                                                  shared_elements_inputs_outputs_df,
+                                                                  shared_organs_inputs_outputs_df,
+                                                                  update_shared_df=UPDATE_SHARED_DF)
 
     # -- CARIBU --
     caribu_facade_ = caribu_facade.CaribuFacade(g,
@@ -337,17 +371,21 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
     # -- SENESCWHEAT --
     # Initial states    
-    senescwheat_roots_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
+    senescwheat_roots_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[
+        inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
         senescwheat_facade.converter.ROOTS_TOPOLOGY_COLUMNS +
-        [i for i in senescwheat_facade.converter.SENESCWHEAT_ROOTS_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_ROOTS_INPUTS if
+         i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
 
     senescwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
         senescwheat_facade.converter.ELEMENTS_TOPOLOGY_COLUMNS +
-        [i for i in senescwheat_facade.converter.SENESCWHEAT_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_ELEMENTS_INPUTS if
+         i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
 
     senescwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
         senescwheat_facade.converter.AXES_TOPOLOGY_COLUMNS +
-        [i for i in senescwheat_facade.converter.SENESCWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in senescwheat_facade.converter.SENESCWHEAT_AXES_INPUTS if
+         i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
     # Update parameters if specified
     if update_parameters_all_models and 'senescwheat' in update_parameters_all_models:
@@ -371,11 +409,13 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     # Initial states    
     farquharwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
         farquharwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS +
-        [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_ELEMENTS_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_ELEMENTS_INPUTS if
+         i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
 
     farquharwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
         farquharwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
-        [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in farquharwheat_facade.converter.FARQUHARWHEAT_AXES_INPUTS if
+         i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
     # Use the initial version of the photosynthesis sub-model (as in Barillot et al. 2016, and in Gauthier et al. 2020)
     update_parameters_farquharwheat = {'SurfacicProteins': False, 'NSC_Retroinhibition': False}
@@ -392,19 +432,24 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     # Initial states    
     growthwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
         growthwheat_facade.converter.HIDDENZONE_TOPOLOGY_COLUMNS +
-        [i for i in growthwheat_facade.simulation.HIDDENZONE_INPUTS if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in growthwheat_facade.simulation.HIDDENZONE_INPUTS if
+         i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
 
     growthwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
         growthwheat_facade.converter.ELEMENT_TOPOLOGY_COLUMNS +
-        [i for i in growthwheat_facade.simulation.ELEMENT_INPUTS if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in growthwheat_facade.simulation.ELEMENT_INPUTS if
+         i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
 
-    growthwheat_root_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
+    growthwheat_root_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].loc[
+        inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME]['organ'] == 'roots'][
         growthwheat_facade.converter.ROOT_TOPOLOGY_COLUMNS +
-        [i for i in growthwheat_facade.simulation.ROOT_INPUTS if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in growthwheat_facade.simulation.ROOT_INPUTS if
+         i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
 
     growthwheat_axes_initial_state = inputs_dataframes[AXES_INITIAL_STATE_FILENAME][
         growthwheat_facade.converter.AXIS_TOPOLOGY_COLUMNS +
-        [i for i in growthwheat_facade.simulation.AXIS_INPUTS if i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in growthwheat_facade.simulation.AXIS_INPUTS if
+         i in inputs_dataframes[AXES_INITIAL_STATE_FILENAME].columns]].copy()
 
     # Update parameters if specified
     if update_parameters_all_models and 'growthwheat' in update_parameters_all_models:
@@ -429,16 +474,20 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     # -- CNWHEAT --
     # Initial states    
     cnwheat_organs_initial_state = inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME][
-        [i for i in cnwheat_facade.cnwheat_converter.ORGANS_VARIABLES if i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in cnwheat_facade.cnwheat_converter.ORGANS_VARIABLES if
+         i in inputs_dataframes[ORGANS_INITIAL_STATE_FILENAME].columns]].copy()
 
     cnwheat_hiddenzones_initial_state = inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME][
-        [i for i in cnwheat_facade.cnwheat_converter.HIDDENZONE_VARIABLES if i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in cnwheat_facade.cnwheat_converter.HIDDENZONE_VARIABLES if
+         i in inputs_dataframes[HIDDENZONES_INITIAL_STATE_FILENAME].columns]].copy()
 
     cnwheat_elements_initial_state = inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME][
-        [i for i in cnwheat_facade.cnwheat_converter.ELEMENTS_VARIABLES if i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in cnwheat_facade.cnwheat_converter.ELEMENTS_VARIABLES if
+         i in inputs_dataframes[ELEMENTS_INITIAL_STATE_FILENAME].columns]].copy()
 
     cnwheat_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
-        [i for i in cnwheat_facade.cnwheat_converter.SOILS_VARIABLES if i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
+        [i for i in cnwheat_facade.cnwheat_converter.SOILS_VARIABLES if
+         i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
 
     # Update parameters if specified
     if update_parameters_all_models and 'cnwheat' in update_parameters_all_models:
@@ -465,12 +514,13 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     # Run cnwheat with constant nitrates concentration in the soil if specified
     if N_fertilizations is not None and 'constant_Conc_Nitrates' in N_fertilizations.keys():
         cnwheat_facade_.soils[(1, 'MS')].constant_Conc_Nitrates = True  # TODO: make (1, 'MS') more general
-        cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * cnwheat_facade_.soils[(1, 'MS')].volume
+        cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * cnwheat_facade_.soils[
+            (1, 'MS')].volume
+
 
     # -- FSPMWHEAT --
     # Facade initialisation
     fspmwheat_facade_ = fspmwheat_facade.FSPMWheatFacade(g)
-
 
     # Update geometry
     adel_wheat.update_geometry(g)
@@ -497,9 +547,11 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 else:
                     run_caribu = False
 
-                caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky', heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
+                caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky',
+                                   heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
                 # try:
-                #     print('CARIBU', g.get_vertex_property(49)['width'])
+                #     print('CARIBU organ', g.get_vertex_property(70)['length'])
+                #     print('CARIBU hiddenelement', g.get_vertex_property(80)['length'])
                 # except:
                 #     pass
 
@@ -507,13 +559,16 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     # run SenescWheat
                     senescwheat_facade_.run()
                     # try:
-                    #     print('SENESC', g.get_vertex_property(49)['width'])
+                    #     print('SENESC organ', g.get_vertex_property(70)['length'])
+                    #     print('SENESC hiddenelement', g.get_vertex_property(80)['length'])
                     # except:
                     #     pass
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
                     if not shared_elements_inputs_outputs_df.empty and \
-                            np.nansum(shared_elements_inputs_outputs_df.loc[shared_elements_inputs_outputs_df['element'].isin(['StemElement', 'LeafElement1']), 'green_area']) == 0:
+                            np.nansum(shared_elements_inputs_outputs_df.loc[
+                                          shared_elements_inputs_outputs_df['element'].isin(
+                                              ['StemElement', 'LeafElement1']), 'green_area']) == 0:
                         # append the inputs and outputs at current step to global lists
                         all_simulation_steps.append(t_senescwheat)
                         axes_all_data_list.append(shared_axes_inputs_outputs_df.copy())
@@ -524,23 +579,28 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                         break
 
                     # Run the rest of the model if the plant is alive
-                    for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP, FARQUHARWHEAT_TIMESTEP):
+                    for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP,
+                                                 FARQUHARWHEAT_TIMESTEP):
                         # get the meteo of the current step
-                        Ta, ambient_CO2, RH, Ur, SRWC = meteo.loc[t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'SRWC']]
+                        Ta, ambient_CO2, RH, Ur, SRWC = meteo.loc[
+                            t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'SRWC']]
 
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur, SRWC)
                         # try:
-                        #     print('FARQUHAR', g.get_vertex_property(49)['width'])
+                        #     print('FARQUHAR organ', g.get_vertex_property(70)['length'])
+                        #     print('FARQUHAR hiddenelement', g.get_vertex_property(80)['length'])
                         # except:
                         #     pass
 
-                        for t_elongwheat in range(t_farquharwheat, t_farquharwheat + FARQUHARWHEAT_TIMESTEP, ELONGWHEAT_TIMESTEP):
+                        for t_elongwheat in range(t_farquharwheat, t_farquharwheat + FARQUHARWHEAT_TIMESTEP,
+                                                  ELONGWHEAT_TIMESTEP):
                             # run ElongWheat
                             Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
                             elongwheat_facade_.run(Tair, Tsoil, option_static=option_static)
                             # try:
-                            #     print('ELONG', g.get_vertex_property(49)['width'])
+                            #     print('ELONG organ', g.get_vertex_property(70)['length'])
+                            #     print('ELONG hiddenelement', g.get_vertex_property(80)['length'])
                             # except:
                             #     pass
 
@@ -549,35 +609,44 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                             if show_3Dplant:
                                 adel_wheat.plot(g)
                             # try:
-                            #     print('ADEL', g.get_vertex_property(49)['width'])
+                            #     print('ADEL organ', g.get_vertex_property(70)['length'])
+                            #     print('ADEL hiddenelement', g.get_vertex_property(80)['length'])
                             # except:
                             #     pass
 
-                            for t_turgorgrowth in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP, TURGORGROWTH_TIMESTEP):
-                                # Forcings sucrose, amino_acids and proteins data from initial data inputs file
-                                hiddenzones_data_filepath = os.path.join(INPUTS_DIRPATH, HIDDENZONES_FORCINGS_FILENAME)
-                                hiddenzones_data_df = pd.read_csv(hiddenzones_data_filepath)
-                                hiddenzones_data_grouped = hiddenzones_data_df.groupby(turgorgrowth_facade_._simulation.HIDDENZONE_T_INDEXES)
-
+                            for t_turgorgrowth in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP,
+                                                        TURGORGROWTH_TIMESTEP):
                                 SRWC, temperature = meteo.loc[t_turgorgrowth, ['SRWC', 'air_temperature']]
                                 turgorgrowth_facade_.run(SRWC)
                                 # try:
-                                #     print('TURGOR', g.get_vertex_property(49)['width'])
+                                #     print('TURGOR organ', g.get_vertex_property(70)['length'])
+                                #     print('TURGOR hiddenelement', g.get_vertex_property(80)['length'])
                                 # except:
                                 #     pass
 
+                                # Update geometry
+                                adel_wheat.update_geometry(g)
+                                if show_3Dplant:
+                                    adel_wheat.plot(g)
+                                # try:
+                                #     print('ADEL organ', g.get_vertex_property(70)['length'])
+                                #     print('ADEL hiddenelement', g.get_vertex_property(80)['length'])
+                                # except:
+                                #     pass
                                 adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
 
-                                for t_growthwheat in range(t_turgorgrowth, t_turgorgrowth + TURGORGROWTH_TIMESTEP, GROWTHWHEAT_TIMESTEP):
+                                for t_growthwheat in range(t_turgorgrowth, t_turgorgrowth + TURGORGROWTH_TIMESTEP,
+                                                           GROWTHWHEAT_TIMESTEP):
                                     # run GrowthWheat
                                     growthwheat_facade_.run()
                                     # try:
-                                    #     print('GROWTH', g.get_vertex_property(49)['width'])
+                                    #     print('GROWTH organ', g.get_vertex_property(70)['length'])
+                                    #     print('GROWTH hiddenelement', g.get_vertex_property(80)['length'])
                                     # except:
                                     #     pass
 
-
-                                    for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP, CNWHEAT_TIMESTEP):
+                                    for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP,
+                                                           CNWHEAT_TIMESTEP):
                                         print('t cnwheat is {}'.format(t_cnwheat))
 
                                         # N fertilization if any
@@ -591,7 +660,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                             Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
                                             cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
                                         # try:
-                                        #     print('CN-WHEAT', g.get_vertex_property(49)['width'])
+                                        #     print('CN-WHEAT organ', g.get_vertex_property(70)['length'])
+                                        #     print('CN-WHEAT hiddenelement', g.get_vertex_property(80)['length'])
                                         # except:
                                         #     pass
 
@@ -618,16 +688,18 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         finally:
             # convert list of outputs into dataframes
             outputs_df_dict = {}
-            for outputs_df_list, outputs_filename, index_columns in ((axes_all_data_list, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
-                                                                     (organs_all_data_list, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
-                                                                     (hiddenzones_all_data_list, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
-                                                                     (elements_all_data_list, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
-                                                                     (soils_all_data_list, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
+            for outputs_df_list, outputs_filename, index_columns in (
+                    (axes_all_data_list, AXES_OUTPUTS_FILENAME, AXES_INDEX_COLUMNS),
+                    (organs_all_data_list, ORGANS_OUTPUTS_FILENAME, ORGANS_INDEX_COLUMNS),
+                    (hiddenzones_all_data_list, HIDDENZONES_OUTPUTS_FILENAME, HIDDENZONES_INDEX_COLUMNS),
+                    (elements_all_data_list, ELEMENTS_OUTPUTS_FILENAME, ELEMENTS_INDEX_COLUMNS),
+                    (soils_all_data_list, SOILS_OUTPUTS_FILENAME, SOILS_INDEX_COLUMNS)):
                 outputs_filepath = os.path.join(OUTPUTS_DIRPATH, outputs_filename)
                 outputs_df = pd.concat(outputs_df_list, keys=all_simulation_steps, sort=False)
                 outputs_df.reset_index(0, inplace=True)
                 outputs_df.rename({'level_0': 't'}, axis=1, inplace=True)
-                outputs_df = outputs_df.reindex(index_columns + outputs_df.columns.difference(index_columns).tolist(), axis=1, copy=False)
+                outputs_df = outputs_df.reindex(index_columns + outputs_df.columns.difference(index_columns).tolist(),
+                                                axis=1, copy=False)
                 if run_from_outputs:
                     outputs_df = pd.concat([previous_outputs_dataframes[outputs_filename], outputs_df], sort=False)
                 outputs_df.fillna(value=np.nan, inplace=True)  # Convert back None to NaN
@@ -658,7 +730,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 tmp_filename = 'ACTUAL_{}.csv'.format(outputs_file_basename)
                 tmp_path = os.path.join(OUTPUTS_DIRPATH, tmp_filename)
                 assert not os.path.isfile(tmp_path), \
-                    "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(tmp_filename, outputs_file_basename)
+                    "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(
+                        tmp_filename, outputs_file_basename)
 
             time_grid = list(outputs_df_dict.values())[0].t
             delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
@@ -676,10 +749,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         SOILS_POSTPROCESSING_FILENAME_cnwheat = 'soils_postprocessing_cnwheat.csv'
 
         AXES_POSTPROCESSING_FILENAME_turgor = 'axes_postprocessing_turgor.csv'
-        ORGANS_POSTPROCESSING_FILENAME_turgor  = 'organs_postprocessing_turgor.csv'
-        HIDDENZONES_POSTPROCESSING_FILENAME_turgor  = 'hiddenzones_postprocessing_turgor.csv'
-        ELEMENTS_POSTPROCESSING_FILENAME_turgor  = 'elements_postprocessing_turgor.csv'
-        SOILS_POSTPROCESSING_FILENAME_turgor  = 'soils_postprocessing_turgor.csv'
+        ORGANS_POSTPROCESSING_FILENAME_turgor = 'organs_postprocessing_turgor.csv'
+        HIDDENZONES_POSTPROCESSING_FILENAME_turgor = 'hiddenzones_postprocessing_turgor.csv'
+        ELEMENTS_POSTPROCESSING_FILENAME_turgor = 'elements_postprocessing_turgor.csv'
+        SOILS_POSTPROCESSING_FILENAME_turgor = 'soils_postprocessing_turgor.csv'
 
         # run the postprocessing
         axes_postprocessing_file_basename_cnwheat = AXES_POSTPROCESSING_FILENAME_cnwheat.split('.')[0]
@@ -700,12 +773,13 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          postprocessing_df_dict_cnwheat[organs_postprocessing_file_basename_cnwheat],
          postprocessing_df_dict_cnwheat[elements_postprocessing_file_basename_cnwheat],
          postprocessing_df_dict_cnwheat[soils_postprocessing_file_basename_cnwheat]) \
-            = cnwheat_facade.CNWheatFacade.postprocessing(axes_outputs_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]],
-                                                          hiddenzone_outputs_df=outputs_df_dict[HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]],
-                                                          organs_outputs_df=outputs_df_dict[ORGANS_OUTPUTS_FILENAME.split('.')[0]],
-                                                          elements_outputs_df=outputs_df_dict[ELEMENTS_OUTPUTS_FILENAME.split('.')[0]],
-                                                          soils_outputs_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]],
-                                                          delta_t=delta_t)
+            = cnwheat_facade.CNWheatFacade.postprocessing(
+            axes_outputs_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]],
+            hiddenzone_outputs_df=outputs_df_dict[HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]],
+            organs_outputs_df=outputs_df_dict[ORGANS_OUTPUTS_FILENAME.split('.')[0]],
+            elements_outputs_df=outputs_df_dict[ELEMENTS_OUTPUTS_FILENAME.split('.')[0]],
+            soils_outputs_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]],
+            delta_t=delta_t)
 
         postprocessing_df_dict_turgor = {}
         (postprocessing_df_dict_turgor[axes_postprocessing_file_basename_turgor],
@@ -713,29 +787,36 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          postprocessing_df_dict_turgor[elements_postprocessing_file_basename_turgor],
          # postprocessing_df_dict_turgor[soils_postprocessing_file_basename_turgor], \
          postprocessing_df_dict_turgor[organs_postprocessing_file_basename_turgor]) \
-            = turgorgrowth_facade.TurgorGrowthFacade.postprocessing(axes_outputs_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]],
-                                                                    hiddenzone_outputs_df=outputs_df_dict[HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]],
-                                                                    elements_outputs_df=outputs_df_dict[ELEMENTS_OUTPUTS_FILENAME.split('.')[0]],
-                                                                    # soil_outputs_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]],
-                                                                    organs_outputs_df=outputs_df_dict[ORGANS_OUTPUTS_FILENAME.split('.')[0]],
-                                                                    delta_t=delta_t)
+            = turgorgrowth_facade.TurgorGrowthFacade.postprocessing(
+            axes_outputs_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]],
+            hiddenzone_outputs_df=outputs_df_dict[HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]],
+            elements_outputs_df=outputs_df_dict[ELEMENTS_OUTPUTS_FILENAME.split('.')[0]],
+            # soil_outputs_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]],
+            organs_outputs_df=outputs_df_dict[ORGANS_OUTPUTS_FILENAME.split('.')[0]],
+            delta_t=delta_t)
 
-        for postprocessing_file_basename, postprocessing_filename in ((axes_postprocessing_file_basename_cnwheat, AXES_POSTPROCESSING_FILENAME_cnwheat),
-                                                                      (hiddenzones_postprocessing_file_basename_cnwheat, HIDDENZONES_POSTPROCESSING_FILENAME_cnwheat),
-                                                                      (organs_postprocessing_file_basename_cnwheat, ORGANS_POSTPROCESSING_FILENAME_cnwheat),
-                                                                      (elements_postprocessing_file_basename_cnwheat, ELEMENTS_POSTPROCESSING_FILENAME_cnwheat),
-                                                                      (soils_postprocessing_file_basename_cnwheat, SOILS_POSTPROCESSING_FILENAME_cnwheat)):
+        for postprocessing_file_basename, postprocessing_filename in (
+                (axes_postprocessing_file_basename_cnwheat, AXES_POSTPROCESSING_FILENAME_cnwheat),
+                (hiddenzones_postprocessing_file_basename_cnwheat, HIDDENZONES_POSTPROCESSING_FILENAME_cnwheat),
+                (organs_postprocessing_file_basename_cnwheat, ORGANS_POSTPROCESSING_FILENAME_cnwheat),
+                (elements_postprocessing_file_basename_cnwheat, ELEMENTS_POSTPROCESSING_FILENAME_cnwheat),
+                (soils_postprocessing_file_basename_cnwheat, SOILS_POSTPROCESSING_FILENAME_cnwheat)):
             postprocessing_filepath = os.path.join(POSTPROCESSING_DIRPATH, postprocessing_filename)
-            postprocessing_df_dict_cnwheat[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
+            postprocessing_df_dict_cnwheat[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA',
+                                                                                index=False,
+                                                                                float_format='%.{}f'.format(
+                                                                                    OUTPUTS_PRECISION))
 
-        for postprocessing_file_basename, postprocessing_filename in ((axes_postprocessing_file_basename_turgor, AXES_POSTPROCESSING_FILENAME_turgor),
-                                                                      (hiddenzones_postprocessing_file_basename_turgor, HIDDENZONES_POSTPROCESSING_FILENAME_turgor),
-                                                                      (organs_postprocessing_file_basename_turgor, ORGANS_POSTPROCESSING_FILENAME_turgor),
-                                                                      (elements_postprocessing_file_basename_turgor, ELEMENTS_POSTPROCESSING_FILENAME_turgor)):
-                                                                      # (soils_postprocessing_file_basename_turgor, SOILS_POSTPROCESSING_FILENAME_turgor)):
+        for postprocessing_file_basename, postprocessing_filename in (
+                (axes_postprocessing_file_basename_turgor, AXES_POSTPROCESSING_FILENAME_turgor),
+                (hiddenzones_postprocessing_file_basename_turgor, HIDDENZONES_POSTPROCESSING_FILENAME_turgor),
+                (organs_postprocessing_file_basename_turgor, ORGANS_POSTPROCESSING_FILENAME_turgor),
+                (elements_postprocessing_file_basename_turgor, ELEMENTS_POSTPROCESSING_FILENAME_turgor)):
+            # (soils_postprocessing_file_basename_turgor, SOILS_POSTPROCESSING_FILENAME_turgor)):
             postprocessing_filepath = os.path.join(POSTPROCESSING_DIRPATH, postprocessing_filename)
-            postprocessing_df_dict_turgor[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA', index=False, float_format='%.{}f'.format(OUTPUTS_PRECISION))
-
+            postprocessing_df_dict_turgor[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA',
+                                                                               index=False, float_format='%.{}f'.format(
+                    OUTPUTS_PRECISION))
 
     # ---------------------------------------------
     # -----            GRAPHS               -------
@@ -791,23 +872,28 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         df_elt = postprocessing_df_dict_cnwheat[elements_postprocessing_file_basename_cnwheat]
         df_SAM = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, AXES_OUTPUTS_FILENAME))
 
-        cnwheat_facade.CNWheatFacade.graphs(axes_postprocessing_df=postprocessing_df_dict_cnwheat[axes_postprocessing_file_basename_cnwheat],
-                                            hiddenzones_postprocessing_df=postprocessing_df_dict_cnwheat[hiddenzones_postprocessing_file_basename_cnwheat],
-                                            organs_postprocessing_df=postprocessing_df_dict_cnwheat[organs_postprocessing_file_basename_cnwheat],
-                                            elements_postprocessing_df=postprocessing_df_dict_cnwheat[elements_postprocessing_file_basename_cnwheat],
-                                            soils_postprocessing_df=postprocessing_df_dict_cnwheat[soils_postprocessing_file_basename_cnwheat],
-                                            graphs_dirpath=GRAPHS_DIRPATH)
+        cnwheat_facade.CNWheatFacade.graphs(
+            axes_postprocessing_df=postprocessing_df_dict_cnwheat[axes_postprocessing_file_basename_cnwheat],
+            hiddenzones_postprocessing_df=postprocessing_df_dict_cnwheat[
+                hiddenzones_postprocessing_file_basename_cnwheat],
+            organs_postprocessing_df=postprocessing_df_dict_cnwheat[organs_postprocessing_file_basename_cnwheat],
+            elements_postprocessing_df=postprocessing_df_dict_cnwheat[elements_postprocessing_file_basename_cnwheat],
+            soils_postprocessing_df=postprocessing_df_dict_cnwheat[soils_postprocessing_file_basename_cnwheat],
+            graphs_dirpath=GRAPHS_DIRPATH)
 
-        turgorgrowth_facade.TurgorGrowthFacade.graphs(axes_postprocessing_df=postprocessing_df_dict_turgor[axes_postprocessing_file_basename_turgor],
-                                            hiddenzones_postprocessing_df=postprocessing_df_dict_turgor[hiddenzones_postprocessing_file_basename_turgor],
-                                            organs_postprocessing_df=postprocessing_df_dict_turgor[organs_postprocessing_file_basename_turgor],
-                                            elements_postprocessing_df=postprocessing_df_dict_turgor[elements_postprocessing_file_basename_turgor],
-                                            # soils_postprocessing_df=postprocessing_df_dict_turgor[soils_postprocessing_file_basename_turgor],
-                                            graphs_dirpath=GRAPHS_DIRPATH)
+        turgorgrowth_facade.TurgorGrowthFacade.graphs(
+            axes_postprocessing_df=postprocessing_df_dict_turgor[axes_postprocessing_file_basename_turgor],
+            hiddenzones_postprocessing_df=postprocessing_df_dict_turgor[
+                hiddenzones_postprocessing_file_basename_turgor],
+            organs_postprocessing_df=postprocessing_df_dict_turgor[organs_postprocessing_file_basename_turgor],
+            elements_postprocessing_df=postprocessing_df_dict_turgor[elements_postprocessing_file_basename_turgor],
+            # soils_postprocessing_df=postprocessing_df_dict_turgor[soils_postprocessing_file_basename_turgor],
+            graphs_dirpath=GRAPHS_DIRPATH)
 
         # --- Additional graphs
         from cnwheat import tools as cnwheat_tools
-        colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey', 'lime']
+        colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey',
+                  'lime']
         colors = colors + colors
 
         # # 9) Extensibility in three-dimensions :
@@ -856,7 +942,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         df_elt_outputs['N_content_total'] = df_elt_outputs['N_content_total'] * 100
         x_name = 't'
         x_label = 'Time (Hour)'
-        graph_variables_ph_elements = {'gs': u'Stomatal conductance (mol m-2 s-1) (Ball et al.)','gs_psi': u'Stomatal conductance (mol m-2 s-1) (Tuzet et al.)', 'gs_VPD': u'Stomatal conductance (mol m-2 s-1) (Leuning et al.)', 'gs_VPD_psi': u'Stomatal conductance (mol m-2 s-1) (Wolf et al.)'}
+        graph_variables_ph_elements = {'gs': u'Stomatal conductance (mol m-2 s-1) (Ball et al.)',
+                                       'gs_psi': u'Stomatal conductance (mol m-2 s-1) (Tuzet et al.)',
+                                       'gs_VPD': u'Stomatal conductance (mol m-2 s-1) (Leuning et al.)',
+                                       'gs_VPD_psi': u'Stomatal conductance (mol m-2 s-1) (Wolf et al.)'}
         for org_ph in (['blade'], ['sheath'], ['internode'], ['peduncle', 'ear']):
             for variable_name, variable_label in graph_variables_ph_elements.items():
                 graph_name = variable_name + '_' + '_'.join(org_ph) + '.PNG'
@@ -865,7 +954,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                                   y_name=variable_name,
                                                   x_label=x_label,
                                                   y_label=variable_label,
-                                                  colors=[colors[i - 1] for i in df_elt_outputs.metamer.unique().tolist()],
+                                                  colors=[colors[i - 1] for i in
+                                                          df_elt_outputs.metamer.unique().tolist()],
                                                   filters={'organ': org_ph},
                                                   plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
                                                   explicit_label=False)
@@ -891,7 +981,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             phyllochron['metamer'].append(metamer)
             prev_leaf_emergence_t = leaf_emergence[(plant, metamer - 1)]
             if df_SAM[(df_SAM['t'] == leaf_emergence_t) | (df_SAM['t'] == prev_leaf_emergence_t)].sum_TT.count() == 2:
-                phyllo_DD = df_SAM[(df_SAM['t'] == leaf_emergence_t)].sum_TT.values[0] - df_SAM[(df_SAM['t'] == prev_leaf_emergence_t)].sum_TT.values[0]
+                phyllo_DD = df_SAM[(df_SAM['t'] == leaf_emergence_t)].sum_TT.values[0] - \
+                            df_SAM[(df_SAM['t'] == prev_leaf_emergence_t)].sum_TT.values[0]
             else:
                 phyllo_DD = np.nan
             phyllochron['phyllochron'].append(phyllo_DD)
@@ -909,119 +1000,97 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             plt.savefig(os.path.join(GRAPHS_DIRPATH, 'phyllochron' + '.PNG'))
             plt.close()
 
-        # # 1) Comparison Dimensions with Ljutovac 2002
-        # data_obs = pd.read_csv(r'inputs\Ljutovac2002.csv')
-        # bchmk = data_obs
-        # res = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
-        # res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.leaf_Lmax)].copy()
-        # res_IN = res[~ np.isnan(res.internode_Lmax)]
-        # last_value_idx = res.groupby(['metamer'])['t'].transform(max) == res['t']
-        # res = res[last_value_idx].copy()
-        # res['lamina_Wmax'] = res.leaf_Wmax
-        # res['lamina_W_Lg'] = res.leaf_Wmax / res.lamina_Lmax
-        # bchmk = bchmk.loc[bchmk.metamer >= min(res.metamer)]
-        # bchmk['lamina_W_Lg'] = bchmk.lamina_Wmax / bchmk.lamina_Lmax
-        # last_value_idx = res_IN.groupby(['metamer'])['t'].transform(max) == res_IN['t']
-        # res_IN = res_IN[last_value_idx].copy()
-        # res = res[['metamer', 'leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'lamina_W_Lg', 'SSLW', 'LSSW']].merge(res_IN[['metamer', 'internode_Lmax']], left_on='metamer',
-        #                                                                                                                       right_on='metamer', how='outer').copy()
+        # 1) Comparison Dimensions with Ljutovac 2002
+        data_obs = pd.read_csv(r'inputs\Ljutovac2002.csv')
+        bchmk = data_obs
+        res = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
+        res = res[(res['axis'] == 'MS') & (res['plant'] == 1) & ~np.isnan(res.lamina_Lmax)].copy()
+        res_IN = res[~ np.isnan(res.internode_Lmax)]
+        last_value_idx = res.groupby(['metamer'])['t'].transform(max) == res['t']
+        res = res[last_value_idx].copy()
+        res['lamina_Wmax'] = res.leaf_Wmax
+        res['lamina_W_Lg'] = res.leaf_Wmax / res.lamina_Lmax
+        bchmk = bchmk.loc[bchmk.metamer >= min(res.metamer)]
+        bchmk['lamina_W_Lg'] = bchmk.lamina_Wmax / bchmk.lamina_Lmax
+        last_value_idx = res_IN.groupby(['metamer'])['t'].transform(max) == res_IN['t']
+        res_IN = res_IN[last_value_idx].copy()
+        res = res[['metamer', 'lamina_Lmax', 'lamina_Wmax', 'lamina_W_Lg', 'SSLW', 'LSSW']].merge(res_IN[['metamer', 'internode_Lmax']], left_on='metamer',
+                                                                                                                              right_on='metamer', how='outer').copy()
 
-        # var_list = ['leaf_Lmax', 'lamina_Lmax', 'sheath_Lmax', 'lamina_Wmax', 'internode_Lmax']
-        # for var in list(var_list):
-        #     fig, ax = plt.subplots()
-        #     plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
-        #     plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 100 * 1.05) + list(bchmk[var] * 1.05)))
-        #
-        #     tmp = res[['metamer', var]].drop_duplicates()
-        #
-        #     line1 = ax.plot(tmp.metamer, tmp[var] * 100, color='c', marker='o')
-        #     line2 = ax.plot(bchmk.metamer, bchmk[var], color='orange', marker='o')
-        #
-        #     ax.set_ylabel(var + ' (cm)')
-        #     ax.set_title(var)
-        #     ax.legend((line1[0], line2[0]), ('Simulation', 'Ljutovac 2002'), loc=2)
-        #     plt.savefig(os.path.join(GRAPHS_DIRPATH, var + '.PNG'))
-        #     plt.close()
-        #
-        # var = 'lamina_W_Lg'
-        # fig, ax = plt.subplots()
-        # plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
-        # plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 1.05) + list(bchmk[var] * 1.05)))
-        # tmp = res[['metamer', var]].drop_duplicates()
-        # line1 = ax.plot(tmp.metamer, tmp[var], color='c', marker='o')
-        # line2 = ax.plot(bchmk.metamer, bchmk[var], color='orange', marker='o')
-        # ax.set_ylabel(var)
-        # ax.set_title(var)
-        # ax.legend((line1[0], line2[0]), ('Simulation', 'Ljutovac 2002'), loc=2)
-        # plt.savefig(os.path.join(GRAPHS_DIRPATH, var + '.PNG'))
-        # plt.close()
+        var_list = ['lamina_Lmax', 'lamina_Wmax', 'internode_Lmax']
+        for var in list(var_list):
+            fig, ax = plt.subplots()
+            plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
+            plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 100 * 1.05) + list(bchmk[var] * 1.05)))
 
-        # #: Save to pdf main graphs to analyze
-        # # Graphs repertory
-        # dir = GRAPHS_DIRPATH
-        # # List of graphs
-        # fileNames = ["leaf_Lmax.PNG", "leaf_L_hz.PNG", "length_blade.PNG", "length_hz.PNG", "length_sheath.PNG", "leaf_pseudostem_length_hz.PNG",
-        #              "width_blade.PNG", "width_hz.PNG", "width_sheath.PNG", "thickness_blade.PNG", "thickness_hz.PNG", "thickness_sheath.PNG",
-        #              "total_water_potential_blade.PNG", "total_water_potential_hz.PNG", "total_water_potential_sheath.PNG",
-        #              "osmotic_water_potential_blade.PNG", "osmotic_water_potential_hz.PNG", "osmotic_water_potential_sheath.PNG",
-        #              "water_content_blade.PNG", "water_content_hz.PNG", "water_content_sheath.PNG",
-        #              "Conc_Amino_Acids_phloem.PNG", "Conc_Sucrose_phloem.PNG", "plant_WC_DM_axis.PNG"]
-        # # Creation of a word document
-        # doc = aw.Document()
-        # # Creation of a doc generator
-        # builder = aw.DocumentBuilder(doc)
-        # # Loop through graphs in folder
-        # for imageFile in fileNames:
-        #     # Insertion of graph into the document
-        #     builder.insert_image(os.path.join(dir, imageFile))
-        #     # Insert a paragraph break to avoid graphs overlapping
-        #     builder.writeln()
-        # # Saving in pdf format
-        # doc.save(os.path.join(GRAPHS_DIRPATH, 'graphs.pdf'))
+            tmp = res[['metamer', var]].drop_duplicates()
 
-        # # 1bis) Comparison Structural Masses vs. adaptation from Bertheloot 2008
-        #
-        # # SSLW Laminae
-        # bchmk = pd.DataFrame.from_dict({1: 15, 2: 23, 3: 25, 4: 18, 5: 22, 6: 25, 7: 20, 8: 23, 9: 26, 10: 28, 11: 31}, orient='index').rename(columns={0: 'SSLW'})
-        # bchmk.index.name = 'metamer'
-        # bchmk = bchmk.reset_index()
-        # bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
-        #
-        # fig, ax = plt.subplots()
-        # plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
-        # plt.ylim(ymin=0, ymax=50)
-        #
-        # tmp = res[['metamer', 'SSLW']].drop_duplicates()
-        #
-        # line1 = ax.plot(tmp.metamer, tmp.SSLW, color='c', marker='o')
-        # line2 = ax.plot(bchmk.metamer, bchmk.SSLW, color='orange', marker='o')
-        #
-        # ax.set_ylabel('Structural Specific Lamina Weight (g.m-2)')
-        # ax.set_title('Structural Specific Lamina Weight')
-        # ax.legend((line1[0], line2[0]), ('Simulation', 'adapated from Bertheloot 2008'), loc=3)
-        # plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SSLW.PNG'))
-        # plt.close()
-        #
-        # # LWS Sheaths
-        # bchmk = pd.DataFrame.from_dict({1: 0.08, 2: 0.09, 3: 0.11, 4: 0.18, 5: 0.17, 6: 0.21, 7: 0.24, 8: 0.4, 9: 0.5, 10: 0.55, 11: 0.65}, orient='index').rename(columns={0: 'LSSW'})
-        # bchmk.index.name = 'metamer'
-        # bchmk = bchmk.reset_index()
-        # bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
-        #
-        # fig, ax = plt.subplots()
-        # plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
-        # plt.ylim(ymin=0, ymax=0.8)
-        #
-        # tmp = res[['metamer', 'LSSW']].drop_duplicates()
-        #
-        # line1 = ax.plot(tmp.metamer, tmp.LSSW, color='c', marker='o')
-        # line2 = ax.plot(bchmk.metamer, bchmk.LSSW, color='orange', marker='o')
-        #
-        # ax.set_ylabel('Lineic Structural Sheath Weight (g.m-1)')
-        # ax.set_title('Lineic Structural Sheath Weight')
-        # ax.legend((line1[0], line2[0]), ('Simulation', 'adapated from Bertheloot 2008'), loc=2)
-        # plt.savefig(os.path.join(GRAPHS_DIRPATH, 'LSSW.PNG'))
-        # plt.close()
+            line1 = ax.plot(tmp.metamer, tmp[var] * 100, color='c', marker='o')
+            line2 = ax.plot(bchmk.metamer, bchmk[var], color='orange', marker='o')
+
+            ax.set_ylabel(var + ' (cm)')
+            ax.set_title(var)
+            ax.legend((line1[0], line2[0]), ('Simulation', 'Ljutovac 2002'), loc=2)
+            plt.savefig(os.path.join(GRAPHS_DIRPATH, var + '.PNG'))
+            plt.close()
+
+        var = 'lamina_W_Lg'
+        fig, ax = plt.subplots()
+        plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
+        plt.ylim(ymin=0, ymax=np.nanmax(list(res[var] * 1.05) + list(bchmk[var] * 1.05)))
+        tmp = res[['metamer', var]].drop_duplicates()
+        line1 = ax.plot(tmp.metamer, tmp[var], color='c', marker='o')
+        line2 = ax.plot(bchmk.metamer, bchmk[var], color='orange', marker='o')
+        ax.set_ylabel(var)
+        ax.set_title(var)
+        ax.legend((line1[0], line2[0]), ('Simulation', 'Ljutovac 2002'), loc=2)
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, var + '.PNG'))
+        plt.close()
+
+        #: Save
+        # 1bis) Comparison Structural Masses vs. adaptation from Bertheloot 2008
+
+        # SSLW Laminae
+        bchmk = pd.DataFrame.from_dict({1: 15, 2: 23, 3: 25, 4: 18, 5: 22, 6: 25, 7: 20, 8: 23, 9: 26, 10: 28, 11: 31}, orient='index').rename(columns={0: 'SSLW'})
+        bchmk.index.name = 'metamer'
+        bchmk = bchmk.reset_index()
+        bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
+
+        fig, ax = plt.subplots()
+        plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
+        plt.ylim(ymin=0, ymax=50)
+
+        tmp = res[['metamer', 'SSLW']].drop_duplicates()
+
+        line1 = ax.plot(tmp.metamer, tmp.SSLW, color='c', marker='o')
+        line2 = ax.plot(bchmk.metamer, bchmk.SSLW, color='orange', marker='o')
+
+        ax.set_ylabel('Structural Specific Lamina Weight (g.m-2)')
+        ax.set_title('Structural Specific Lamina Weight')
+        ax.legend((line1[0], line2[0]), ('Simulation', 'adapated from Bertheloot 2008'), loc=3)
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SSLW.PNG'))
+        plt.close()
+
+        # LWS Sheaths
+        bchmk = pd.DataFrame.from_dict({1: 0.08, 2: 0.09, 3: 0.11, 4: 0.18, 5: 0.17, 6: 0.21, 7: 0.24, 8: 0.4, 9: 0.5, 10: 0.55, 11: 0.65}, orient='index').rename(columns={0: 'LSSW'})
+        bchmk.index.name = 'metamer'
+        bchmk = bchmk.reset_index()
+        bchmk = bchmk[bchmk.metamer >= min(res.metamer)]
+
+        fig, ax = plt.subplots()
+        plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
+        plt.ylim(ymin=0, ymax=0.8)
+
+        tmp = res[['metamer', 'LSSW']].drop_duplicates()
+
+        line1 = ax.plot(tmp.metamer, tmp.LSSW, color='c', marker='o')
+        line2 = ax.plot(bchmk.metamer, bchmk.LSSW, color='orange', marker='o')
+
+        ax.set_ylabel('Lineic Structural Sheath Weight (g.m-1)')
+        ax.set_title('Lineic Structural Sheath Weight')
+        ax.legend((line1[0], line2[0]), ('Simulation', 'adapated from Bertheloot 2008'), loc=2)
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'LSSW.PNG'))
+        plt.close()
 
         # 2) LAI
         df_elt['green_area_rep'] = df_elt.green_area * df_elt.nb_replications
@@ -1033,7 +1102,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             LAI_dict['plant'].append(plant)
             LAI_dict['LAI'].append(data['green_area_rep'].sum() * PLANT_DENSITY[plant])
 
-        cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(LAI_dict), 't', 'LAI', x_label='Time (Hour)', y_label='LAI', plot_filepath=os.path.join(GRAPHS_DIRPATH, 'LAI.PNG'), explicit_label=False)
+        cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(LAI_dict), 't', 'LAI', x_label='Time (Hour)', y_label='LAI',
+                                          plot_filepath=os.path.join(GRAPHS_DIRPATH, 'LAI.PNG'), explicit_label=False)
 
         # 3) RER during the exponentiel-like phase
 
@@ -1082,12 +1152,15 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         x, y = zip(*sorted(RER_sim.items()))
         ax1.plot(x, y, label=r'Simulated RER', linestyle='-', color='g')
-        ax1.errorbar(data_obs.metamer, data_obs.RER, yerr=data_obs.RER_confint, marker='o', color='g', linestyle='', label="Observed RER", markersize=2)
-        ax1.plot(list(rer_param.keys()), list(rer_param.values()), marker='*', color='k', linestyle='', label="Model parameters")
+        ax1.errorbar(data_obs.metamer, data_obs.RER, yerr=data_obs.RER_confint, marker='o', color='g', linestyle='',
+                     label="Observed RER", markersize=2)
+        ax1.plot(list(rer_param.keys()), list(rer_param.values()), marker='*', color='k', linestyle='',
+                 label="Model parameters")
 
         # Formatting
         ax1.set_ylabel(u'Relative Elongation Rate at 12°C (s$^{-1}$)')
-        ax1.legend(prop={'size': 12}, bbox_to_anchor=(0.05, .6, 0.9, .5), loc='upper center', ncol=3, mode="expand", borderaxespad=0.)
+        ax1.legend(prop={'size': 12}, bbox_to_anchor=(0.05, .6, 0.9, .5), loc='upper center', ncol=3, mode="expand",
+                   borderaxespad=0.)
         ax1.legend(loc='upper left')
         ax1.set_xlabel('Phytomer rank')
         ax1.set_ylim(bottom=0., top=6e-6)
@@ -1124,7 +1197,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         lines = line1 + line2 + line3
         labs = [line.get_label() for line in lines]
-        ax.legend(lines, labs, loc='center left', prop={'size': 10}, framealpha=0.5, bbox_to_anchor=(1, 0.815), borderaxespad=0.)
+        ax.legend(lines, labs, loc='center left', prop={'size': 10}, framealpha=0.5, bbox_to_anchor=(1, 0.815),
+                  borderaxespad=0.)
 
         ax.set_xlabel('Days')
         ax2.set_ylim([0, 200])
@@ -1157,16 +1231,19 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         C_usages['exudation'] = np.cumsum(df_axe.C_exudated.fillna(0))
 
         # Structural growth
-        C_consumption_mstruct_roots = df_roots.sucrose_consumption_mstruct.fillna(0) + df_roots.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        C_consumption_mstruct_roots = df_roots.sucrose_consumption_mstruct.fillna(
+            0) + df_roots.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
         C_usages['Structure_roots'] = np.cumsum(C_consumption_mstruct_roots.reset_index(drop=True))
 
-        df_hz['C_consumption_mstruct'] = df_hz.sucrose_consumption_mstruct.fillna(0) + df_hz.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_hz['C_consumption_mstruct'] = df_hz.sucrose_consumption_mstruct.fillna(
+            0) + df_hz.AA_consumption_mstruct.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
         df_hz['C_consumption_mstruct_tillers'] = df_hz['C_consumption_mstruct'] * df_hz['nb_replications']
         C_consumption_mstruct_shoot = df_hz.groupby(['t'])['C_consumption_mstruct_tillers'].sum()
         C_usages['Structure_shoot'] = np.cumsum(C_consumption_mstruct_shoot.reset_index(drop=True))
 
         # Non structural C
-        df_phloem['C_NS'] = df_phloem.sucrose.fillna(0) + df_phloem.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_phloem['C_NS'] = df_phloem.sucrose.fillna(0) + df_phloem.amino_acids.fillna(
+            0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
         # C_NS_phloem_init = df_phloem.C_NS - df_phloem.C_NS[0]
         C_NS_phloem_init = df_phloem.C_NS
         C_usages['NS_phloem'] = C_NS_phloem_init.reset_index(drop=True)
@@ -1176,18 +1253,21 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         df_elt['C_NS_tillers'] = df_elt['C_NS'] * df_elt['nb_replications'].fillna(1.)
         C_elt = df_elt.groupby(['t']).agg({'C_NS_tillers': 'sum'})
 
-        df_hz['C_NS'] = df_hz.sucrose.fillna(0) + df_hz.fructan.fillna(0) + (df_hz.amino_acids.fillna(0) + df_hz.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_hz['C_NS'] = df_hz.sucrose.fillna(0) + df_hz.fructan.fillna(0) + (
+                df_hz.amino_acids.fillna(0) + df_hz.proteins.fillna(0)) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
         df_hz['C_NS_tillers'] = df_hz['C_NS'] * df_hz['nb_replications'].fillna(1.)
         C_hz = df_hz.groupby(['t']).agg({'C_NS_tillers': 'sum'})
 
-        df_roots['C_NS'] = df_roots.sucrose.fillna(0) + df_roots.amino_acids.fillna(0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
+        df_roots['C_NS'] = df_roots.sucrose.fillna(0) + df_roots.amino_acids.fillna(
+            0) * AMINO_ACIDS_C_RATIO / AMINO_ACIDS_N_RATIO
 
         C_NS_autre = df_roots.C_NS.reset_index(drop=True) + C_elt.C_NS_tillers + C_hz.C_NS_tillers
         C_NS_autre_init = C_NS_autre - C_NS_autre[0]
         C_usages['NS_other'] = C_NS_autre_init.reset_index(drop=True)
 
         # Total
-        C_usages['C_budget'] = (C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
+        C_usages['C_budget'] = (
+                                       C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
                                C_usages.C_produced
 
         # ----- Graph
@@ -1196,8 +1276,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 label=u'Structural mass - Shoot', color='g')
         ax.plot(C_usages.t, C_usages.Structure_roots / C_usages.C_produced * 100,
                 label=u'Structural mass - Roots', color='r')
-        ax.plot(C_usages.t, (C_usages.NS_phloem + C_usages.NS_other) / C_usages.C_produced * 100, label=u'Non-structural C', color='darkorange')
-        ax.plot(C_usages.t, (C_usages.Respi_roots + C_usages.Respi_shoot) / C_usages.C_produced * 100, label=u'C loss by respiration', color='b')
+        ax.plot(C_usages.t, (C_usages.NS_phloem + C_usages.NS_other) / C_usages.C_produced * 100,
+                label=u'Non-structural C', color='darkorange')
+        ax.plot(C_usages.t, (C_usages.Respi_roots + C_usages.Respi_shoot) / C_usages.C_produced * 100,
+                label=u'C loss by respiration', color='b')
         ax.plot(C_usages.t, C_usages.exudation / C_usages.C_produced * 100, label=u'C loss by exudation', color='c')
 
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
@@ -1205,14 +1287,17 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         ax.set_ylabel(u'Carbon usages : Photosynthesis (%)')
         ax.set_ylim(bottom=0, top=100.)
 
-        fig.suptitle(u'Total cumulated usages are ' + str(round(C_usages.C_budget.tail(1) * 100, 0)) + u' % of Photosynthesis')
+        fig.suptitle(
+            u'Total cumulated usages are ' + str(round(C_usages.C_budget.tail(1) * 100, 0)) + u' % of Photosynthesis')
 
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_usages_cumulated.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
 
         # 6) RUE
-        df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'] * 3600 / 4.6 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
-        df_elt['RGa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt['nb_replications'] * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
+        df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt[
+            'nb_replications'] * 3600 / 4.6 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
+        df_elt['RGa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt[
+            'nb_replications'] * 3600 / 2.02 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
         PARa = df_elt.groupby(['day'])['PARa_MJ'].agg('sum')
         PARa_cum = np.cumsum(PARa)
         days = df_elt['day'].unique()
@@ -1230,7 +1315,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         ax.set_xlabel('Cumulative absorbed PAR (MJ)')
         ax.set_ylabel('Dry mass (g)')
         ax.set_title('RUE')
-        plt.text(max(PARa_cum) * 0.02, max(sum_dry_mass) * 0.95, 'RUE shoot : {0:.2f} , RUE plant : {1:.2f}'.format(round(RUE_shoot, 2), round(RUE_plant, 2)))
+        plt.text(max(PARa_cum) * 0.02, max(sum_dry_mass) * 0.95,
+                 'RUE shoot : {0:.2f} , RUE plant : {1:.2f}'.format(round(RUE_shoot, 2), round(RUE_plant, 2)))
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'RUE.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
         fig, ax = plt.subplots()
@@ -1267,72 +1353,16 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                                   y_name=variable_name,
                                                   x_label=x_label,
                                                   y_label=variable_label,
-                                                  colors=[colors[i - 1] for i in df_elt_outputs.metamer.unique().tolist()],
+                                                  colors=[colors[i - 1] for i in
+                                                          df_elt_outputs.metamer.unique().tolist()],
                                                   filters={'organ': org_ph},
                                                   plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
                                                   explicit_label=False)
 
-        #: Comparison of results from Gauthier et al. (2020) and actual simulation
-        # Elements
-        data_obs_ele = pd.read_csv(r'outputs\elements_outputs_2020.csv')
-        res_ele = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
-        # List of variables
-        varNames = ["length"]
-        organs = ["LeafElement1", "StemElement"]
-        # Loop through metamer
-        for i in res_ele['metamer']:
-            for org in list(organs):
-                for variable in list(varNames):
-                    fig, ax = plt.subplots()
-                    line1 = ax.plot(res_ele[(res_ele.metamer == i) & (res_ele.element == org)]['t'], res_ele[(res_ele.metamer == i) & (res_ele.element == org)][variable], color='c', marker='.')
-                    line2 = ax.plot(data_obs_ele[(data_obs_ele.metamer == i) & (data_obs_ele.element == org)]['t'], data_obs_ele[(data_obs_ele.metamer == i) & (data_obs_ele.element == org)][variable],
-                                    color='orange', marker='.')
-                    plt.xlim(0, int(max(res_ele['t'])))
-                    ax.set_ylabel(variable + ' (m)')
-                    i = str(i)
-                    ax.set_title(variable + '_' + org + '_' + i)
-                    ax.legend((line1[0], line2[0]), ('Simulation', 'Gauthier 2020'), loc=2)
-                    plt.savefig(os.path.join(GRAPHS_COMPARISON_DIRPATH, 'Comparison_' + variable + '_' + org + '_' + i + '.PNG'))
-                    plt.close()
-
-        # Hiddenzones
-        data_obs_hz = pd.read_csv(r'outputs\hiddenzones_outputs_2020.csv')
-        res_hz = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
-        # List of variables
-        varNames = ["leaf_L", "leaf_pseudostem_length"]
-        # Loop through metamer
-        for i in res_hz['metamer']:
-            for variable in list(varNames):
-                fig, ax = plt.subplots()
-                line1 = ax.plot(res_hz[(res_hz.metamer == i)]['t'], res_hz[(res_hz.metamer == i)][variable], color='c', marker='.')
-                line2 = ax.plot(data_obs_hz[(data_obs_hz.metamer == i)]['t'], data_obs_hz[(data_obs_hz.metamer == i)][variable], color='orange', marker='.')
-                plt.xlim(0, int(max(res_hz['t'])))
-                i = str(i)
-                ax.set_ylabel(variable + ' (m)')
-                ax.set_title(variable + '_' + i)
-                ax.legend((line1[0], line2[0]), ('Simulation', 'Gauthier 2020'), loc=2)
-                plt.savefig(os.path.join(GRAPHS_COMPARISON_DIRPATH, 'Comparison_' + variable + '_' + i + '.PNG'))
-                plt.close()
-
-        # # Saving into pdf file
-        # Creation of a word document
-        doc = aw.Document()
-        # Creation of a doc generator
-        builder = aw.DocumentBuilder(doc)
-        # Loop through graphs in folder
-        dir = GRAPHS_COMPARISON_DIRPATH
-        files = os.listdir(dir)
-        for imageFile in files:
-            # Insertion of graph into the document
-            builder.insert_image(os.path.join(dir, imageFile))
-            # Insert a paragraph break to avoid graphs overlapping
-            builder.writeln()
-        # Saving in pdf format
-        doc.save(os.path.join(GRAPHS_DIRPATH, 'graphs_comparison.pdf'))
-
 
 if __name__ == '__main__':
-         main(12, forced_start_time=318, run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False,
+    main(500, forced_start_time=1500, run_simu=True, run_postprocessing=True, generate_graphs=True,
+         run_from_outputs=False,
          show_3Dplant=False,
          option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
