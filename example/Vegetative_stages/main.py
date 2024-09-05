@@ -550,8 +550,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky',
                                    heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
                 # try:
-                #     print('CARIBU organ', g.get_vertex_property(70)['length'])
-                #     print('CARIBU hiddenelement', g.get_vertex_property(80)['length'])
+                #     print('CARIBU organ', g.get_vertex_property(54)['length'])
+                #     print('CARIBU hiddenelement', g.get_vertex_property(66)['length'])
+                #     print('CARIBU stemelement', g.get_vertex_property(65)['length'])
                 # except:
                 #     pass
 
@@ -559,8 +560,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     # run SenescWheat
                     senescwheat_facade_.run()
                     # try:
-                    #     print('SENESC organ', g.get_vertex_property(70)['length'])
-                    #     print('SENESC hiddenelement', g.get_vertex_property(80)['length'])
+                    #     print('SENESC organ', g.get_vertex_property(54)['length'])
+                    #     print('SENESC hiddenelement', g.get_vertex_property(66)['length'])
+                    #     print('SENESC stemelement', g.get_vertex_property(65)['length'])
                     # except:
                     #     pass
 
@@ -588,8 +590,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur, SRWC)
                         # try:
-                        #     print('FARQUHAR organ', g.get_vertex_property(70)['length'])
-                        #     print('FARQUHAR hiddenelement', g.get_vertex_property(80)['length'])
+                        #     print('FARQUHAR organ', g.get_vertex_property(57)['length'])
+                        #     print('FARQUHAR hiddenelement', g.get_vertex_property(66)['length'])
+                        #     print('FARQUHAR stemelement', g.get_vertex_property(65)['length'])
                         # except:
                         #     pass
 
@@ -599,8 +602,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                             Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
                             elongwheat_facade_.run(Tair, Tsoil, option_static=option_static)
                             # try:
-                            #     print('ELONG organ', g.get_vertex_property(70)['length'])
-                            #     print('ELONG hiddenelement', g.get_vertex_property(80)['length'])
+                            #     print('ELONG organ', g.get_vertex_property(57)['length'])
+                            #     print('ELONG hiddenelement', g.get_vertex_property(66)['length'])
+                            #     print('ELONG stemelement', g.get_vertex_property(65)['length'])
                             # except:
                             #     pass
 
@@ -609,8 +613,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                             if show_3Dplant:
                                 adel_wheat.plot(g)
                             # try:
-                            #     print('ADEL organ', g.get_vertex_property(70)['length'])
-                            #     print('ADEL hiddenelement', g.get_vertex_property(80)['length'])
+                            #     print('ADEL organ', g.get_vertex_property(57)['length'])
+                            #     print('ADEL hiddenelement', g.get_vertex_property(66)['length'])
+                            #     print('ADEL stemelement', g.get_vertex_property(65)['length'])
                             # except:
                             #     pass
 
@@ -619,8 +624,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                 SRWC, temperature = meteo.loc[t_turgorgrowth, ['SRWC', 'air_temperature']]
                                 turgorgrowth_facade_.run(SRWC)
                                 # try:
-                                #     print('TURGOR organ', g.get_vertex_property(70)['length'])
-                                #     print('TURGOR hiddenelement', g.get_vertex_property(80)['length'])
+                                #     print('TURGOR organ', g.get_vertex_property(57)['length'])
+                                #     print('TURGOR hiddenelement', g.get_vertex_property(66)['length'])
+                                #     print('TURGOR stemelement', g.get_vertex_property(65)['length'])
                                 # except:
                                 #     pass
 
@@ -629,8 +635,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                 if show_3Dplant:
                                     adel_wheat.plot(g)
                                 # try:
-                                #     print('ADEL organ', g.get_vertex_property(70)['length'])
-                                #     print('ADEL hiddenelement', g.get_vertex_property(80)['length'])
+                                #     print('ADEL organ', g.get_vertex_property(57)['length'])
+                                #     print('ADEL hiddenelement', g.get_vertex_property(66)['length'])
+                                #     print('ADEL stemelement', g.get_vertex_property(65)['length'])
                                 # except:
                                 #     pass
                                 adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
@@ -640,8 +647,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                     # run GrowthWheat
                                     growthwheat_facade_.run()
                                     # try:
-                                    #     print('GROWTH organ', g.get_vertex_property(70)['length'])
-                                    #     print('GROWTH hiddenelement', g.get_vertex_property(80)['length'])
+                                    #     print('GROWTH organ', g.get_vertex_property(57)['length'])
+                                    #     print('GROWTH hiddenelement', g.get_vertex_property(66)['length'])
+                                    #     print('GROWTH stemelement', g.get_vertex_property(65)['length'])
                                     # except:
                                     #     pass
 
@@ -660,8 +668,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                             Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
                                             cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
                                         # try:
-                                        #     print('CN-WHEAT organ', g.get_vertex_property(70)['length'])
-                                        #     print('CN-WHEAT hiddenelement', g.get_vertex_property(80)['length'])
+                                        #     print('CN organ', g.get_vertex_property(57)['length'])
+                                        #     print('CN hiddenelement', g.get_vertex_property(66)['length'])
+                                        #     print('CN stemelement', g.get_vertex_property(65)['length'])
                                         # except:
                                         #     pass
 
@@ -987,6 +996,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 phyllo_DD = np.nan
             phyllochron['phyllochron'].append(phyllo_DD)
 
+        # Save in output
+        phyllochron_df = pd.DataFrame.from_dict(phyllochron)
+        phyllochron_df.to_csv('phyllochron.csv', index=False)
+
         if len(phyllochron['metamer']) > 0:
             fig, ax = plt.subplots()
             plt.xlim((int(min(phyllochron['metamer']) - 1), int(max(phyllochron['metamer']) + 1)))
@@ -1014,10 +1027,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         bchmk['lamina_W_Lg'] = bchmk.lamina_Wmax / bchmk.lamina_Lmax
         last_value_idx = res_IN.groupby(['metamer'])['t'].transform(max) == res_IN['t']
         res_IN = res_IN[last_value_idx].copy()
-        res = res[['metamer', 'lamina_Lmax', 'lamina_Wmax', 'lamina_W_Lg', 'SSLW', 'LSSW']].merge(res_IN[['metamer', 'internode_Lmax']], left_on='metamer',
+        res = res[['metamer', 'lamina_Lmax', 'lamina_Wmax', 'lamina_W_Lg', 'SSLW', 'LSSW', 'leaf_Lmax', 'sheath_Lmax']].merge(res_IN[['metamer', 'internode_Lmax']], left_on='metamer',
                                                                                                                               right_on='metamer', how='outer').copy()
 
-        var_list = ['lamina_Lmax', 'lamina_Wmax', 'internode_Lmax']
+        var_list = ['lamina_Lmax', 'lamina_Wmax', 'internode_Lmax', 'leaf_Lmax', 'sheath_Lmax']
         for var in list(var_list):
             fig, ax = plt.subplots()
             plt.xlim((int(min(res.metamer) - 1), int(max(res.metamer) + 1)))
@@ -1361,10 +1374,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(500, forced_start_time=1500, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(2500, forced_start_time=1400, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
-         show_3Dplant=False,
-         option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
+         show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
          # heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
          PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')

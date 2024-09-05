@@ -208,7 +208,7 @@ class TurgorGrowthFacade(object):
                         # turgorgrowth_hiddenzone_data_names = set(turgorgrowth_simulation.Simulation.HIDDENZONE_STATE).intersection(turgorgrowth_hiddenzone.__dict__)
                         # Adding aggregated variables into inputs
                         turgorgrowth_hiddenzone_data_names = set(turgorgrowth_simulation.Simulation.HIDDENZONE_RUN_VARIABLES).intersection(turgorgrowth_hiddenzone.__dict__)
-                        if mtg_hiddenzone_properties.get('leaf_pseudo_age') == 0:  # First time hiddenzone passes into turgorgrowth model
+                        if mtg_hiddenzone_properties.get('leaf_pseudo_age') == 0:  # First time hiddenzone passes into turgorgrowth sub-model
                             missing_initial_hiddenzone_properties = turgorgrowth_hiddenzone_data_names - set(mtg_hiddenzone_properties)
                             turgorgrowth_hiddenzone_data_names -= missing_initial_hiddenzone_properties
 
@@ -288,6 +288,11 @@ class TurgorGrowthFacade(object):
 
                                 mtg_organ_properties['shape_max_width'] = mtg_hiddenzone_properties['leaf_Wmax']
                                 mtg_organ_properties['shape_mature_length'] = mtg_hiddenzone_properties['lamina_Lmax']
+
+                            if mtg_organ_label == 'sheath' and has_valid_hiddenzone == True:
+                                mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
+                                mtg_hiddenzone_properties['sheath_Lmax'] = mtg_organ_properties['length']
+
 
                         if has_valid_element:
                             has_valid_organ = True
