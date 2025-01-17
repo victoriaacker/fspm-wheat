@@ -143,7 +143,7 @@ class FarquharWheatFacade(object):
                                 if mtg_element_label in FARQUHARWHEAT_VISIBLE_ELEMENTS_INPUTS and farquharwheat_element_input_name == 'height':
                                     mtg_element_geom = self._shared_mtg.property('geometry').get(mtg_element_vid)
                                     if mtg_element_geom is not None:  # It seems like visible elements with very little area don't have geometry.
-                                        # TODO : Ckeck ADEL's area threshold for geometry representation
+                                        # TODO : Check ADEL's area threshold for geometry representation
                                         triangle_heights = get_height({mtg_element_vid: self._shared_mtg.property('geometry')[mtg_element_vid]})
                                         mtg_element_input = np.nanmean(triangle_heights[mtg_element_vid])
                                     else:

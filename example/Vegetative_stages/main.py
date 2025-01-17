@@ -13,6 +13,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+
+import fspmwheat.tools
 from alinea.adel.adel_dynamic import AdelDyn
 from alinea.adel.echap_leaf import echap_leaves
 from elongwheat import parameters as elongwheat_parameters
@@ -68,10 +70,17 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          option_static=False, show_3Dplant=True, tillers_replications=True, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_simple.csv',
+         # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
-         GRAPHS_COMPARISON_DIRPATH='graphs_comparison'):
+         # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
+         OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
+         # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
+         # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
+         # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
+         # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
+         # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
+         # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
+         GRAPHS_COMPARISON_DIRPATH='graphs_comparison', SCREENSHOT_DIRPATH = 'adel_save'):
     """
     Run a simulation of fspmwheat with coupling to several models
 
@@ -550,9 +559,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky',
                                    heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
                 # try:
-                #     print('CARIBU organ', g.get_vertex_property(54)['length'])
-                #     print('CARIBU hiddenelement', g.get_vertex_property(66)['length'])
-                #     print('CARIBU stemelement', g.get_vertex_property(65)['length'])
+                #     # print('CARIBU hz', (g.get_vertex_property(69)['leaf_Wmax']))
+                #     print('CARIBU ele', g.get_vertex_property(815)['is_growing'])
+                #     print('CARIBU or', g.get_vertex_property(60)['is_growing'])
                 # except:
                 #     pass
 
@@ -560,9 +569,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     # run SenescWheat
                     senescwheat_facade_.run()
                     # try:
-                    #     print('SENESC organ', g.get_vertex_property(54)['length'])
-                    #     print('SENESC hiddenelement', g.get_vertex_property(66)['length'])
-                    #     print('SENESC stemelement', g.get_vertex_property(65)['length'])
+                    #     # print('SENESC hz', (g.get_vertex_property(69)['leaf_Wmax']))
+                    #     print('SENESC ele', g.get_vertex_property(815)['is_growing'])
+                    #     print('SENESC or', g.get_vertex_property(60)['is_growing'])
                     # except:
                     #     pass
 
@@ -590,9 +599,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur, SRWC)
                         # try:
-                        #     print('FARQUHAR organ', g.get_vertex_property(57)['length'])
-                        #     print('FARQUHAR hiddenelement', g.get_vertex_property(66)['length'])
-                        #     print('FARQUHAR stemelement', g.get_vertex_property(65)['length'])
+                        #     # print('FARQUHAR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                        #     print('FARQUHAR ele', g.get_vertex_property(815)['is_growing'])
+                        #     print('FARQUHAR or', g.get_vertex_property(60)['is_growing'])
                         # except:
                         #     pass
 
@@ -602,9 +611,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                             Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
                             elongwheat_facade_.run(Tair, Tsoil, option_static=option_static)
                             # try:
-                            #     print('ELONG organ', g.get_vertex_property(57)['length'])
-                            #     print('ELONG hiddenelement', g.get_vertex_property(66)['length'])
-                            #     print('ELONG stemelement', g.get_vertex_property(65)['length'])
+                            #     # print('ELONG hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                            #     print('ELONG ele', g.get_vertex_property(815)['is_growing'])
+                            #     print('ELONG or', g.get_vertex_property(60)['is_growing'])
                             # except:
                             #     pass
 
@@ -613,9 +622,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                             if show_3Dplant:
                                 adel_wheat.plot(g)
                             # try:
-                            #     print('ADEL organ', g.get_vertex_property(57)['length'])
-                            #     print('ADEL hiddenelement', g.get_vertex_property(66)['length'])
-                            #     print('ADEL stemelement', g.get_vertex_property(65)['length'])
+                            #     # print('ADEL hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                            #     print('ADEL ele', g.get_vertex_property(815)['is_growing'])
+                            #     print('ADEL or', g.get_vertex_property(60)['is_growing'])
                             # except:
                             #     pass
 
@@ -624,9 +633,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                 SRWC, temperature = meteo.loc[t_turgorgrowth, ['SRWC', 'air_temperature']]
                                 turgorgrowth_facade_.run(SRWC)
                                 # try:
-                                #     print('TURGOR organ', g.get_vertex_property(57)['length'])
-                                #     print('TURGOR hiddenelement', g.get_vertex_property(66)['length'])
-                                #     print('TURGOR stemelement', g.get_vertex_property(65)['length'])
+                                #     # print('TURGOR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                                #     print('TURGOR ele', g.get_vertex_property(815)['is_growing'])
+                                #     print('TURGOR or', g.get_vertex_property(60)['is_growing'])
                                 # except:
                                 #     pass
 
@@ -635,21 +644,24 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                 if show_3Dplant:
                                     adel_wheat.plot(g)
                                 # try:
-                                #     print('ADEL organ', g.get_vertex_property(57)['length'])
-                                #     print('ADEL hiddenelement', g.get_vertex_property(66)['length'])
-                                #     print('ADEL stemelement', g.get_vertex_property(65)['length'])
+                                #     # print('ADEL hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                                #     print('ADEL ele', g.get_vertex_property(815)['is_growing'])
+                                #     print('ADEL or', g.get_vertex_property(60)['is_growing'])
                                 # except:
                                 #     pass
-                                adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
+
+                                # Adel 3D plant save
+                                # adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
+                                adel_wheat.scene(g).save(r'adel_save\t{}.bgeom'.format(t_turgorgrowth))
 
                                 for t_growthwheat in range(t_turgorgrowth, t_turgorgrowth + TURGORGROWTH_TIMESTEP,
                                                            GROWTHWHEAT_TIMESTEP):
                                     # run GrowthWheat
                                     growthwheat_facade_.run()
                                     # try:
-                                    #     print('GROWTH organ', g.get_vertex_property(57)['length'])
-                                    #     print('GROWTH hiddenelement', g.get_vertex_property(66)['length'])
-                                    #     print('GROWTH stemelement', g.get_vertex_property(65)['length'])
+                                    #     # print('GROWTH hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                                    #     print('GROWTH ele', g.get_vertex_property(815)['is_growing'])
+                                    #     print('GROWTH or', g.get_vertex_property(60)['is_growing'])
                                     # except:
                                     #     pass
 
@@ -668,9 +680,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                             Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
                                             cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
                                         # try:
-                                        #     print('CN organ', g.get_vertex_property(57)['length'])
-                                        #     print('CN hiddenelement', g.get_vertex_property(66)['length'])
-                                        #     print('CN stemelement', g.get_vertex_property(65)['length'])
+                                        #     # print('CN hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                                        #     print('CN ele', g.get_vertex_property(815)['is_growing'])
+                                        #     print('CN or', g.get_vertex_property(60)['is_growing'])
                                         # except:
                                         #     pass
 
@@ -738,9 +750,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 # Assert states_filepaths were not opened during simulation run meaning that other filenames were saved
                 tmp_filename = 'ACTUAL_{}.csv'.format(outputs_file_basename)
                 tmp_path = os.path.join(OUTPUTS_DIRPATH, tmp_filename)
-                assert not os.path.isfile(tmp_path), \
-                    "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(
-                        tmp_filename, outputs_file_basename)
+                # TODO - Victoria 10.21
+                # assert not os.path.isfile(tmp_path), \
+                #     "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(
+                #         tmp_filename, outputs_file_basename)
 
             time_grid = list(outputs_df_dict.values())[0].t
             delta_t = (time_grid.loc[1] - time_grid.loc[0]) * HOUR_TO_SECOND_CONVERSION_FACTOR
@@ -900,50 +913,16 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             graphs_dirpath=GRAPHS_DIRPATH)
 
         # --- Additional graphs
+
+        # Flux potentiel hydriques dans la plante
+        # df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
+        # df_elt_outputs = df_elt_outputs.loc[(df_elt_outputs.axis == 'MS') & (df_elt_outputs.element != 'HiddenElement')]
+        # fig = fspmwheat.tools.color_MTG_water(g, df_elt_outputs, time.time(), SCREENSHOT_DIRPATH)
+
         from cnwheat import tools as cnwheat_tools
         colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey',
                   'lime']
         colors = colors + colors
-
-        # # 9) Extensibility in three-dimensions :
-        # df_hz_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
-        # phi_width = df_hz_outputs.groupby(['t', 'metamer'], as_index=False).agg(phi_width=("phi_width", "mean"))
-        # phi_thickness = df_hz_outputs.groupby(['t', 'metamer'], as_index=False).agg(phi_thickness=("phi_thickness", "mean"))
-        # phi_length = df_hz_outputs.groupby(['t', 'metamer'], as_index=False).agg(phi_length=("phi_length", "mean"))
-        #
-        # fig, ax = plt.subplots()
-        # line1 = ax.plot(phi_width.t, phi_width.phi_width, label=u'phi_width', color = [colors[i - 1] for i in phi_width.metamer.unique().tolist()], linestyle='solid')
-        # line2 = ax.plot(phi_thickness.t, phi_thickness.phi_thickness, label=u'phi_thickness', color = [colors[i - 1] for i in phi_thickness.metamer.unique().tolist()], linestyle='dashed')
-        # line3 = ax.plot(phi_length.t, phi_length.phi_length, label=u'phi_length', color = [colors[i - 1] for i in phi_length.metamer.unique().tolist()], linestyle='dotted')
-        #
-        # lines = line1 + line2 + line3
-        # labs = [line.get_label() for line in lines]
-        # ax.legend(lines, labs, loc='center left', prop={'size': 10}, framealpha=0.5, bbox_to_anchor=(1, 0.815), borderaxespad=0.)
-        #
-        # ax.set_xlabel('t')
-        # ax.set_ylabel(u'phi')
-        # ax.set_title('phi in 3-dimensions')
-        # plt.tight_layout()
-        # graph_name = 'phi_3_dimensions.PNG'
-        # plt.savefig(os.path.join(GRAPHS_DIRPATH, graph_name), dpi=200, format='PNG', bbox_inches='tight')
-
-        # TEST 2
-        # for i in phi_width.metamer:
-        #     fig, ax = plt.subplots()
-        #     line1 = ax.plot(phi_width.t, phi_width.phi_width, label=u'phi_width', linestyle='solid')
-        #     line2 = ax.plot(phi_thickness.t, phi_thickness.phi_thickness, label=u'phi_thickness', linestyle='dashed')
-        #     line3 = ax.plot(phi_length.t, phi_length.phi_length, label=u'phi_length', linestyle='dotted')
-        #
-        #     lines = line1 + line2 + line3
-        #     labs = [line.get_label() for line in lines]
-        #     ax.legend(lines, labs, loc='center left', prop={'size': 10}, framealpha=0.5, bbox_to_anchor=(1, 0.815), borderaxespad=0.)
-        #
-        #     ax.set_xlabel('t')
-        #     ax.set_ylabel(u'phi')
-        #     ax.set_title('phi in 3-dimensions')
-        #     plt.tight_layout()
-        #     graph_name = 'phi_metamer' + '_' + str(i) + '.PNG'
-        #     plt.savefig(os.path.join(GRAPHS_DIRPATH, graph_name), dpi=200, format='PNG', bbox_inches='tight')
 
         # 8) Stomatal conductance models : gsw (Ball), gs_CO2 (Tuzet), gs_w (Wolf)
         df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
@@ -1374,10 +1353,13 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=1400, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(2500, forced_start_time=1495, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
-         heterogeneous_canopy=True, N_fertilizations={2016: 357143, 2520: 1000000},
+         # show_3Dplant=False, option_static=False, tillers_replications=None,
+         heterogeneous_canopy=True,
+         N_fertilizations={2016: 357143, 2520: 1000000},
+         # N_fertilizations={'constant_Conc_Nitrates': 328000},
          # heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
          PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
          # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')

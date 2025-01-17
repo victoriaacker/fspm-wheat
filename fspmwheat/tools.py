@@ -186,3 +186,52 @@ def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
     Viewer.camera.setPosition(Vector3(83.883, 12.3239, 93.4706))
     Viewer.camera.lookAt(Vector3(0., 0, 50))
     Viewer.saveSnapshot(os.path.join(SCREENSHOT_DIRPATH, 'Day_{}.png'.format(t/24+1)))
+
+
+# TEST VICTORIA 09.2024 ------------------------------------------------------------------------------------------------
+def color_MTG_water(g, df, t, SCREENSHOT_DIRPATH):
+    def color_map(psi):
+        if -0.5 <= psi <= -0.1:     # Bleu clair TODO gradué
+            vid_colors = [173, 216, 230]
+        elif -0.1 < psi <= 0:   # Bleu foncé TODO gradué
+            # vid_colors = [int(255 - psi * 51), int(255 - psi * 20), 50]
+            # vid_colors = [int(255 + psi * 51), int(255 + psi * 20), 50]
+            vid_colors = [0, 0, 139]
+        else:   # Rouge TODO gradué
+            vid_colors = [255, 0, 0]
+        return vid_colors
+
+    def calculate_Total_Water_Potential(osmotic_water_potential, turgor_water_potential):
+        """Total water potential
+
+        :param float osmotic_water_potential: (Mpa)
+        :param float turgor_water_potential: (Mpa))
+
+        :return: Total water potential (MPa)
+        :rtype: float
+        """
+        return osmotic_water_potential + turgor_water_potential
+
+    colors = {}
+
+    groups_df = df.groupby(['plant', 'axis', 'metamer', 'organ', 'element'])
+    for vid in g.components_at_scale(g.root, scale=5):
+        pid = int(g.index(g.complex_at_scale(vid, scale=1)))
+        axid = g.property('label')[g.complex_at_scale(vid, scale=2)]
+        mid = int(g.index(g.complex_at_scale(vid, scale=3)))
+        org = g.property('label')[g.complex_at_scale(vid, scale=4)]
+        elid = g.property('label')[vid]
+        id_map = (pid, axid, mid, org, elid)
+        if id_map in groups_df.groups.keys():
+            # psi = (calculate_Total_Water_Potential(g.property('osmotic_water_potential')[vid], g.property('turgor_water_potential')[vid]))
+            psi = g.property('total_water_potential')[vid]
+            colors[vid] = color_map(psi)
+        else:
+            g.property('geometry')[vid] = None
+
+    # plantgl
+    s = to_plantgl(g, colors=colors)[0]
+    Viewer.add(s)
+    Viewer.camera.setPosition(Vector3(83.883, 12.3239, 93.4706))
+    Viewer.camera.lookAt(Vector3(0., 0, 50))
+    Viewer.saveSnapshot(os.path.join(SCREENSHOT_DIRPATH, 'Day_{}.png'.format(t / 24 + 1)))
