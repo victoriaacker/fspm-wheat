@@ -6,7 +6,6 @@ import random
 import time
 import warnings
 
-import aspose.words as aw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.backends.backend_pdf import PdfPages
@@ -73,8 +72,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
-         OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
-         # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
+         # OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
+         OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
          # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
          # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
          # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
@@ -920,9 +919,31 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         # fig = fspmwheat.tools.color_MTG_water(g, df_elt_outputs, time.time(), SCREENSHOT_DIRPATH)
 
         from cnwheat import tools as cnwheat_tools
-        colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey',
-                  'lime']
+        colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey', 'lime']
         colors = colors + colors
+
+        # 9) Osmotic adjustement
+
+        df_hz = postprocessing_df_dict_turgor[hiddenzones_postprocessing_file_basename_turgor]
+        df_hz = df_hz[df_hz['axis'] == 'MS']
+
+        fig, ax = plt.subplots()
+        for i in df_hz.metamer.unique():
+            ax.plot(df_hz[(df_hz.metamer == i)]['conc_solutes_vol'], df_hz[(df_hz.metamer == i)]['osmotic_water_potential'])
+        ax.legend(fontsize=8, loc="upper right")
+        ax.set_xlabel('Solutes equivalent concentration (mol m-3)')
+        ax.set_ylabel('Osmotic water potential of hz (Mpa)')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'osmotic_adjustment_conc_eq' + '.PNG'))
+        plt.close()
+
+        fig, ax = plt.subplots()
+        for i in df_hz.metamer.unique():
+            ax.plot(df_hz[(df_hz.metamer == i)]['leaf_pseudo_age'], df_hz[(df_hz.metamer == i)]['osmotic_water_potential'], label=i)
+        ax.legend(fontsize=8, loc="upper right")
+        ax.set_xlabel('Leaf pseudo age (s)')
+        ax.set_ylabel('Osmotic water potential of hz (Mpa)')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'osmotic_adjustment_age' + '.PNG'))
+        plt.close()
 
         # 8) Stomatal conductance models : gsw (Ball), gs_CO2 (Tuzet), gs_w (Wolf)
         df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
@@ -1093,6 +1114,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             LAI_dict['t'].append(t)
             LAI_dict['plant'].append(plant)
             LAI_dict['LAI'].append(data['green_area_rep'].sum() * PLANT_DENSITY[plant])
+
+        # LAI_df = pd.DataFrame(LAI_dict)
+        # LAI_df.to_csv(os.path.join(OUTPUTS_DIRPATH, 'LAI.csv'))
 
         cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(LAI_dict), 't', 'LAI', x_label='Time (Hour)', y_label='LAI',
                                           plot_filepath=os.path.join(GRAPHS_DIRPATH, 'LAI.PNG'), explicit_label=False)
@@ -1353,7 +1377,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=1495, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(2500, forced_start_time=2100, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          # show_3Dplant=False, option_static=False, tillers_replications=None,
