@@ -1,0 +1,13 @@
+Scenario,CO2,Air_temperature_Day,Air_temperature_Night,Soil_temperature,Tillers,SRWC_t=0,SRWC_E6,SRWC_Rehydration_15Days,PARi,constant_Conc_Nitrates_U,Fertilisation,Simulation_Length,Run_Simulation,Run_Postprocessing,Generate_Graphs,Scenario_label,constant_Conc_Nitrates,Fertilization,METEO_FILENAME
+1,400,13,7,10,0.5,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2400,357143,NA,meteo_CO2_400.csv
+2,400,13,7,10,0.5,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2400_SRWC50,357143,NA,meteo_CO2_400_SRWC_50.csv
+3,400,13,7,10,0.5,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2400_SRWC20,357143,NA,meteo_CO2_400_SRWC_20.csv
+4,400,13,7,10,0.5,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2400_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_400.csv
+5,600,14.2,8.2,11.2,0.5875,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2600,357143,NA,meteo_CO2_600.csv
+6,600,14.2,8.2,11.2,0.5875,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2600_SRWC50,357143,NA,meteo_CO2_600_SRWC_50.csv
+7,600,14.2,8.2,11.2,0.5875,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2600_SRWC20,357143,NA,meteo_CO2_600_SRWC_20.csv
+8,600,14.2,8.2,11.2,0.5875,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2600_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_600.csv
+9,800,15.1,9.1,12.1,0.675,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2875,357143,NA,meteo_CO2_875.csv
+10,800,15.1,9.1,12.1,0.675,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2875_SRWC50,357143,NA,meteo_CO2_875_SRWC_50.csv
+11,800,15.1,9.1,12.1,0.675,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2875_SRWC20,357143,NA,meteo_CO2_875_SRWC_20.csv
+12,800,15.1,9.1,12.1,0.675,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2875_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_875.csv

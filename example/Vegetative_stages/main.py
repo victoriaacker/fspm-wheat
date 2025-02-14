@@ -72,10 +72,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
-         # OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
+         OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
          # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
          # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
-         OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
+         # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
          # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
          # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
          # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
@@ -915,7 +915,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         # Flux potentiel hydriques dans la plante
         # df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
-        # df_elt_outputs = df_elt_outputs.loc[(df_elt_outputs.axis == 'MS') & (df_elt_outputs.element != 'HiddenElement')]
+        # df_elt_outputs = df_elt_outputs.loc[(df_elt_outputs.axis == 'MS') & (df_elt_outputs.element != 'HiddenElement') & (df_elt_outputs.organ != 'internode')]
         # fig = fspmwheat.tools.color_MTG_water(g, df_elt_outputs, time.time(), SCREENSHOT_DIRPATH)
 
         from cnwheat import tools as cnwheat_tools
