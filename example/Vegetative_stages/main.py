@@ -70,9 +70,11 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
-         OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
+         # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_CO2_400.csv',
+         # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_CO2_600.csv',
+         # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_CO2_875.csv',
+         OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
+         # OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
          # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
          # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
          # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
@@ -652,6 +654,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                 # Adel 3D plant save
                                 # adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
                                 adel_wheat.scene(g).save(r'adel_save\t{}.bgeom'.format(t_turgorgrowth))
+                                # adel_wheat.scene(g).save(r'adel_save\t{}.vtk'.format(t_turgorgrowth))
 
                                 for t_growthwheat in range(t_turgorgrowth, t_turgorgrowth + TURGORGROWTH_TIMESTEP,
                                                            GROWTHWHEAT_TIMESTEP):
@@ -921,6 +924,17 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         from cnwheat import tools as cnwheat_tools
         colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey', 'lime']
         colors = colors + colors
+
+        # 10) Meteo : CO2
+        meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), sep=',')
+        fig, ax = plt.subplots()
+        ax.plot(meteo['t'], meteo['ambient_CO2'])
+        ax.legend(fontsize=8, loc="upper right")
+        ax.set_ylabel('CO2 (ppm)')
+        ax.set_xlabel('Time (h)')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'CO2' + '.PNG'))
+        plt.close()
+
 
         # 9) Osmotic adjustement
 
@@ -1377,13 +1391,17 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=2100, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(20, forced_start_time=359, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
+         # show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875},
+         # show_3Dplant=False, option_static=False,tillers_replications={'T1': 0.675, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875},
          # show_3Dplant=False, option_static=False, tillers_replications=None,
          heterogeneous_canopy=True,
          N_fertilizations={2016: 357143, 2520: 1000000},
          # N_fertilizations={'constant_Conc_Nitrates': 328000},
          # heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
          PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
-         # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')
+        # PLANT_DENSITY = {1: 250}, METEO_FILENAME='meteo_CO2_875.csv')
+        # PLANT_DENSITY = {1: 250}, METEO_FILENAME='meteo_CO2_600.csv')
+        # PLANT_DENSITY = {1: 250}, METEO_FILENAME='meteo_CO2_400.csv')

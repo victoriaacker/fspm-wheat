@@ -1,13 +1,16 @@
-Scenario,CO2,Air_temperature_Day,Air_temperature_Night,Soil_temperature,Tillers,SRWC_t=0,SRWC_E6,SRWC_Rehydration_15Days,PARi,constant_Conc_Nitrates_U,Fertilisation,Simulation_Length,Run_Simulation,Run_Postprocessing,Generate_Graphs,Scenario_label,constant_Conc_Nitrates,Fertilization,METEO_FILENAME
-1,400,13,7,10,0.5,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2400,357143,NA,meteo_CO2_400.csv
-2,400,13,7,10,0.5,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2400_SRWC50,357143,NA,meteo_CO2_400_SRWC_50.csv
-3,400,13,7,10,0.5,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2400_SRWC20,357143,NA,meteo_CO2_400_SRWC_20.csv
-4,400,13,7,10,0.5,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2400_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_400.csv
-5,600,14.2,8.2,11.2,0.5875,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2600,357143,NA,meteo_CO2_600.csv
-6,600,14.2,8.2,11.2,0.5875,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2600_SRWC50,357143,NA,meteo_CO2_600_SRWC_50.csv
-7,600,14.2,8.2,11.2,0.5875,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2600_SRWC20,357143,NA,meteo_CO2_600_SRWC_20.csv
-8,600,14.2,8.2,11.2,0.5875,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2600_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_600.csv
-9,800,15.1,9.1,12.1,0.675,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2875,357143,NA,meteo_CO2_875.csv
-10,800,15.1,9.1,12.1,0.675,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2875_SRWC50,357143,NA,meteo_CO2_875_SRWC_50.csv
-11,800,15.1,9.1,12.1,0.675,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2875_SRWC20,357143,NA,meteo_CO2_875_SRWC_20.csv
-12,800,15.1,9.1,12.1,0.675,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2875_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_875.csv
+Scenario,CO2,Air_temperature_Day,Air_temperature_Night,Soil_temperature,Tillers,SRWC_t=0,SRWC_E6,SRWC_Rehydration_15Days,PARi,constant_Conc_Nitrates_U,Fertilisation,Simulation_Length,Run_Simulation,Run_Postprocessing,Generate_Graphs,Scenario_label,constant_Conc_Nitrates,Fertilization,METEO_FILENAME,,,,,,,,,
+1,400,13,7,10,0.5,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2400,357143,NA,meteo_CO2_400.csv,,,,,,,,,
+2,400,13,7,10,0.5,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2400_SRWC50,357143,NA,meteo_CO2_400_SRWC_50.csv,,,,,,,,,
+3,400,13,7,10,0.5,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2400_SRWC20,357143,NA,meteo_CO2_400_SRWC_20.csv,,,,,,,,,
+4,400,13,7,10,0.5,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2400_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_400.csv,,,,,,,,,
+5,600,14.2,8.2,11.2,0.5875,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2600,357143,NA,meteo_CO2_600.csv,,,,,,,,,
+6,600,14.2,8.2,11.2,0.5875,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2600_SRWC50,357143,NA,meteo_CO2_600_SRWC_50.csv,,,,,,,,,
+7,600,14.2,8.2,11.2,0.5875,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2600_SRWC20,357143,NA,meteo_CO2_600_SRWC_20.csv,,,,,,,,,
+8,600,14.2,8.2,11.2,0.5875,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2600_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_600.csv,,,,,,,,,
+9,875,15.1,9.1,12.1,0.675,80,80,80,0 -> 795,50,NA,3500,True,True,True,CO2875,357143,NA,meteo_CO2_875.csv,,,,,,,,,
+10,875,15.1,9.1,12.1,0.675,80,50,80,0 -> 795,50,NA,3500,True,True,True,CO2875_SRWC50,357143,NA,meteo_CO2_875_SRWC_50.csv,,,,,,,,,
+11,875,15.1,9.1,12.1,0.675,80,20,80,0 -> 795,50,NA,3500,True,True,True,CO2875_SRWC20,357143,NA,meteo_CO2_875_SRWC_20.csv,,,,,,,,,
+12,875,15.1,9.1,12.1,0.675,80,80,80,0 -> 795,NO,"50, 140",3500,True,True,True,CO2875_N,NA,"{2016: 357143, 2520: 1000000}",meteo_CO2_875.csv,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Scenario,Simulation_Length,Run_Simulation,Run_From_Outputs,Run_Postprocessing,Generate_Graphs,Scenario_label,Plant_Density,Inter_Row,constant_Conc_Nitrates,constant_Conc_Nitrates_U,PAR,METEO_FILENAME,Inputs_PlantSoil_Dirpath,P_roots,growthwheat:VMAX_ROOTS_GROWTH_PREFLO,growthwheat:K_ROOTS_GROWTH,growthwheat:N_ROOTS_GROWTH,elongwheat:delta_TT_GA,elongwheat:max_nb_leaves,senescwheat:AGE_EFFECT_SENESCENCE,elongwheat:SL_ratio_a,elongwheat:SL_ratio_b,elongwheat:SL_ratio_c,elongwheat:SL_ratio_d,growthwheat:MSTRUCT_ROOTS_BEG_LINEAR_GROWTH,senescwheat:LAG_SENESCENCE_ROOTS,elongwheat:leaf_Lmax_MAX,elongwheat:leaf_LSSW_a
+52,3500,False,False,False,False,N50U_PAR1000_D500_PRoots3,500,0.15,357142.8571,50,1000,meteo_PAR1000.csv,,3,0.01539,6000,1.8,10000000000,50,400,0,0,0.01763,0.25,100,21600000,0.45,0.000005
