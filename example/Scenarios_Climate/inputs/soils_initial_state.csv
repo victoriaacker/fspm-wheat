@@ -1,2 +1,2 @@
-plant,axis,volume,nitrates_v0,nitrates,Tsoil,SRWC,SRWC_drought,soil_water_potential
-1,MS,1,800000,428571,12,80,40,-0.11900251
+plant,axis,volume,nitrates,Tsoil,water_content
+1,MS,1,800000,12,80

@@ -1,17 +1,17 @@
-Scenario,CO2,Air_temperature_Day,Air_temperature_Night,Soil_temperature,Tillers,drought_trigger,stop_drought_SRWC,PARi,constant_Conc_Nitrates_U,Fertilisation,Simulation_Length,Run_Simulation,Run_Postprocessing,Generate_Graphs,Scenario_label,constant_Conc_Nitrates,METEO_FILENAME
-1,400,13,7,10,"{'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_400,357143,meteo_CO2_400.csv
-2,400,13,7,10,"{'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_400_SRWC50,357143,meteo_CO2_400.csv
-3,400,13,7,10,"{'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_400_SRWC20,357143,meteo_CO2_400.csv
-4,400,13,7,10,"{'T1': 0, 'T2': 0, 'T3': 0, 'T4': 0}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_400_monoculm,357143,meteo_CO2_400.csv
-5,600,13,7,10,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_600,357143,meteo_CO2_600.csv
-6,600,13,7,10,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_600_SRWC50,357143,meteo_CO2_600.csv
-7,600,13,7,10,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_600_SRWC20,357143,meteo_CO2_600.csv
-8,800,13,7,10,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_800,357143,meteo_CO2_800.csv
-9,800,13,7,10,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_800_SRWC50,357143,meteo_CO2_800.csv
-10,800,13,7,10,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_800_SRWC20,357143,meteo_CO2_800.csv
-11,600,14,8,11,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_600_T,357143,meteo_CO2_600_T.csv
-12,600,14,8,11,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_600_SRWC50_T,357143,meteo_CO2_600_T.csv
-13,600,14,8,11,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_600_SRWC20_T,357143,meteo_CO2_600_T.csv
-14,800,15,9,12,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_800_T,357143,meteo_CO2_800_T.csv
-15,800,15,9,12,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_800_SRWC50_T,357143,meteo_CO2_800_T.csv
-16,800,15,9,12,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_800_SRWC20_T,357143,meteo_CO2_800_T.csv
+Scenario,CO2,Air_temperature_Day,Air_temperature_Night,Soil_temperature,elongwheat:max_nb_leaves ,Tillers,drought_trigger,stop_drought_SRWC,PARi,constant_Conc_Nitrates_U,Fertilisation,Simulation_Length,Run_Simulation,Run_Postprocessing,Generate_Graphs,Scenario_label,constant_Conc_Nitrates,METEO_FILENAME
+1,400,13,7,10,20,"{'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_400,357143,meteo_CO2_400.csv
+2,400,13,7,10,20,"{'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_400_SRWC50,357143,meteo_CO2_400.csv
+3,400,13,7,10,20,"{'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_400_SRWC20,357143,meteo_CO2_400.csv
+4,400,13,7,10,20,"{'T1': 0, 'T2': 0, 'T3': 0, 'T4': 0}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_400_monoculm,357143,meteo_CO2_400.csv
+5,600,13,7,10,20,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_600,357143,meteo_CO2_600.csv
+6,600,13,7,10,20,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_600_SRWC50,357143,meteo_CO2_600.csv
+7,600,13,7,10,20,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_600_SRWC20,357143,meteo_CO2_600.csv
+8,800,13,7,10,20,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_800,357143,meteo_CO2_800.csv
+9,800,13,7,10,20,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_800_SRWC50,357143,meteo_CO2_800.csv
+10,800,13,7,10,20,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_800_SRWC20,357143,meteo_CO2_800.csv
+11,600,14,8,11,20,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_600_T,357143,meteo_CO2_600_T.csv
+12,600,14,8,11,20,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_600_SRWC50_T,357143,meteo_CO2_600_T.csv
+13,600,14,8,11,20,"{'T1': 0.5875, 'T2': 0.5875, 'T3': 0.5875, 'T4': 0.5875}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_600_SRWC20_T,357143,meteo_CO2_600_T.csv
+14,800,15,9,12,20,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",False,80,0 -> 795,50,NA,2500,True,True,True,CO2_800_T,357143,meteo_CO2_800_T.csv
+15,800,15,9,12,20,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",,50,0 -> 795,50,NA,2500,True,True,True,CO2_800_SRWC50_T,357143,meteo_CO2_800_T.csv
+16,800,15,9,12,20,"{'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675}",,20,0 -> 795,50,NA,2500,True,True,True,CO2_800_SRWC20_T,357143,meteo_CO2_800_T.csv

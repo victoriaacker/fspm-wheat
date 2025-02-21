@@ -68,6 +68,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='scen
     if 'stop_drought_SRWC' in scenario_parameters:
         stop_drought_SRWC = scenario_parameters.get('stop_drought_SRWC', 'False')
 
+
     if RUN_SIMU or RUN_POSTPROCESSING or GENERATE_GRAPHS:
 
         # -- SIMULATION DIRECTORIES --

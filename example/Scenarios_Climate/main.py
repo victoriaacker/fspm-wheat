@@ -301,6 +301,15 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
     g = adel_wheat.load(dir=INPUTS_DIRPATH)
 
+    axeT_df = pd.read_csv(os.path.join(INPUTS_DIRPATH,'axeTable.csv'))
+    # Final leaf number
+    nff =50
+    if update_parameters_all_models and 'elongwheat' in update_parameters_all_models:
+        nff = update_parameters_all_models['elongwheat'].get('max_nb_leaves', nff)
+    axeT_df.HS_final = nff
+    axeT_df.nf = nff
+    axeT_df.nf_end = nff
+
     # ---------------------------------------------
     # ----- CONFIGURATION OF THE FACADES -------
     # ---------------------------------------------
