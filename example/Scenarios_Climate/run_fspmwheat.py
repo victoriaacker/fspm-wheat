@@ -15,7 +15,7 @@ from example.Scenarios_Climate import tools
 # from example.Scenarios_monoculms import additional_graphs
 
 
-def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='scenarios'):
+def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outputs'):
     """
     Run the main.py of fspmwheat using data from a specific scenario
 
@@ -26,8 +26,10 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='scen
 
     # Scenario to be run
     scenarios_df = pd.read_csv(os.path.join(inputs_dirpath, 'scenarios_list.csv'), index_col='Scenario')
+    scenarios_df['drought_trigger'].fillna(False, inplace=True)
     scenario_conditions = scenarios_df.loc[scenario_id].to_dict()
     scenario_name = scenario_conditions['Scenario_label']
+
 
     # -- SIMULATION PARAMETERS --
 
@@ -62,11 +64,12 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='scen
         TILLERS = ast.literal_eval(scenario_parameters['Tillers'])
 
     # Drought
-    if 'drought_trigger' in scenario_parameters:
-        drought_trigger = scenario_parameters.get('drought_trigger', 'False')
-
-    if 'stop_drought_SRWC' in scenario_parameters:
-        stop_drought_SRWC = scenario_parameters.get('stop_drought_SRWC', 'False')
+    drought_trigger = scenario_parameters.get('drought_trigger', 'False')
+    if drought_trigger != 'False':
+        drought_trigger = float(drought_trigger)
+    else:
+        drought_trigger = False
+    stop_drought_SRWC = scenario_parameters.get('stop_drought_SRWC', 'False')
 
 
     if RUN_SIMU or RUN_POSTPROCESSING or GENERATE_GRAPHS:
@@ -107,6 +110,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='scen
                       INPUTS_DIRPATH=inputs_dirpath,
                       OUTPUTS_DIRPATH=scenario_outputs_dirpath,
                       POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
+                      update_parameters_all_models=scenario_parameters,
                       tillers_replications=TILLERS,
                       drought_trigger=drought_trigger, stop_drought_SRWC=stop_drought_SRWC)
             # if GENERATE_GRAPHS:
@@ -130,8 +134,8 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='scen
 
 
 if __name__ == '__main__':
-    scenario = 4
-    inputs_scenarios = 'inputs'
+    scenario = 1
+    inputs = 'inputs'
     outputs = 'outputs'
 
     try:
@@ -148,4 +152,4 @@ if __name__ == '__main__':
         elif opt in ("-s", "--scenario"):
             scenario = int(arg)
 
-    run_fspmwheat(inputs_dirpath=inputs_scenarios, outputs_dir_path=outputs, scenario_id=scenario)
+    run_fspmwheat(inputs_dirpath=inputs, outputs_dir_path=outputs, scenario_id=scenario)

@@ -82,20 +82,10 @@ def rehydration_schedule(water_content_mini, SRWC_target, AWC, rehydration_durat
 
 def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False, stored_times=None,
-         option_static=False, show_3Dplant=True, tillers_replications=True, heterogeneous_canopy=True,
+         option_static=False, show_3Dplant=False, tillers_replications=True, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
-         # OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
-         OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
-         # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
-         # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
-         # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
-         # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
-         # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
-         GRAPHS_COMPARISON_DIRPATH='graphs_comparison', SCREENSHOT_DIRPATH='adel_save',
+         INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
+         OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
          drought_trigger=False, stop_drought_SRWC=False):
     """
     Run a simulation of fspmwheat with coupling to several models
@@ -181,14 +171,6 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
     SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
 
-    # Name of the CSV files which contain the Tr, green_area and SRWC forcings
-    METEO_FORCINGS_FILENAME = 'meteo_Ljutovac2002.csv'
-    METEO_SIMPLE_FORCINGS_FILENAME = 'meteo_simple.csv'
-
-    # Name of the CSV files which describes the forcings values of hiddenzone
-    # Sucrose, amino acids and proteins for osmotic water potential calculation
-    HIDDENZONES_FORCINGS_FILENAME = 'hiddenzones_forcings.csv'
-
     # Read the inputs from CSV files and create inputs dataframes
     inputs_dataframes = {}
     if run_from_outputs:
@@ -249,8 +231,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     START_TIME = max(0, new_start_time)
 
     # Name of the CSV files which contains the meteo data
-    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), index_col='t', sep=',')
-    # meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_SIMPLE_FORCINGS_FILENAME), index_col='t', sep=',')
+    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t', sep=',')
 
     drought_trigger = drought_trigger  # plant green area at which the drought treatment starts (m2)
     drought_ongoing = False  # Is the drought event ongoing (bool)
@@ -595,22 +576,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
                 caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky',
                                    heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
-                # try:
-                #     # print('CARIBU hz', (g.get_vertex_property(69)['leaf_Wmax']))
-                #     print('CARIBU ele', g.get_vertex_property(815)['is_growing'])
-                #     print('CARIBU or', g.get_vertex_property(60)['is_growing'])
-                # except:
-                #     pass
 
                 for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
                     senescwheat_facade_.run()
-                    # try:
-                    #     # print('SENESC hz', (g.get_vertex_property(69)['leaf_Wmax']))
-                    #     print('SENESC ele', g.get_vertex_property(815)['is_growing'])
-                    #     print('SENESC or', g.get_vertex_property(60)['is_growing'])
-                    # except:
-                    #     pass
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
                     if not shared_elements_inputs_outputs_df.empty and \
@@ -630,44 +599,27 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP,
                                                  FARQUHARWHEAT_TIMESTEP):
                         # get the meteo of the current step
-                        Ta, ambient_CO2, RH, Ur, SRWC = meteo.loc[
-                            t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'SRWC']]
+                        Ta, ambient_CO2, RH, Ur = meteo.loc[
+                            t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
 
                         # run FarquharWheat
-                        farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur, SRWC)
-                        # try:
-                        #     # print('FARQUHAR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                        #     print('FARQUHAR ele', g.get_vertex_property(815)['is_growing'])
-                        #     print('FARQUHAR or', g.get_vertex_property(60)['is_growing'])
-                        # except:
-                        #     pass
+                        farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
 
                         for t_elongwheat in range(t_farquharwheat, t_farquharwheat + FARQUHARWHEAT_TIMESTEP,
                                                   ELONGWHEAT_TIMESTEP):
                             # run ElongWheat
                             Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
                             elongwheat_facade_.run(Tair, Tsoil, option_static=option_static)
-                            # try:
-                            #     # print('ELONG hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                            #     print('ELONG ele', g.get_vertex_property(815)['is_growing'])
-                            #     print('ELONG or', g.get_vertex_property(60)['is_growing'])
-                            # except:
-                            #     pass
 
                             # Update geometry
                             adel_wheat.update_geometry(g)
                             if show_3Dplant:
                                 adel_wheat.plot(g)
-                            # try:
-                            #     # print('ADEL hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                            #     print('ADEL ele', g.get_vertex_property(815)['is_growing'])
-                            #     print('ADEL or', g.get_vertex_property(60)['is_growing'])
-                            # except:
-                            #     pass
 
                             for t_turgorgrowth in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP,
                                                         TURGORGROWTH_TIMESTEP):
                                 if drought_trigger and (turgorgrowth_facade_.population.plants[0].axes[0].green_area >= drought_trigger or drought_ongoing) and not drought_passed:
+                                    print('tugor drought')
                                     drought_ongoing = True
                                     turgor_soil = turgorgrowth_facade_.soils[(1, 'MS')]
                                     turgor_soil.constant_water_content = False
@@ -688,7 +640,6 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                         # Rehydration
                                         else:
                                             turgor_soil.water_content += hourly_rehydration
-
                                 turgorgrowth_facade_.run()
                                 # try:
                                 #     # print('TURGOR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
@@ -982,7 +933,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         colors = colors + colors
 
         # 10) Meteo : CO2
-        meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), sep=',')
+        meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), sep=',')
         fig, ax = plt.subplots()
         ax.plot(meteo['t'], meteo['ambient_CO2'])
         ax.legend(fontsize=8, loc="upper right")
@@ -1447,13 +1398,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 if __name__ == '__main__':
     main(2500, forced_start_time=5, run_simu=True, run_postprocessing=True, generate_graphs=True,
-         run_from_outputs=True,
-         show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
-         # show_3Dplant=False, option_static=False, tillers_replications=None,
+         run_from_outputs=False,
+         show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675},
          heterogeneous_canopy=True,
          N_fertilizations={2016: 357143, 2520: 1000000},
-         # N_fertilizations={'constant_Conc_Nitrates': 328000},
-         # heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
-         PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv',
-         drought_trigger=False, stop_drought_SRWC=False)
-    # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')
+         PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_CO2_800_T.csv',
+         drought_trigger=False, stop_drought_SRWC=50)
