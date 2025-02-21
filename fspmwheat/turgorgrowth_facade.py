@@ -48,7 +48,7 @@ POPULATION_RUN_VARIABLES = set(turgorgrowth_simulation.Simulation.PLANTS_RUN_VAR
                                turgorgrowth_simulation.Simulation.HIDDENZONE_RUN_VARIABLES + turgorgrowth_simulation.Simulation.ELEMENTS_RUN_VARIABLES)
 
 #: all the variables to be stored in the MTG
-MTG_RUN_VARIABLES = set(list(POPULATION_RUN_VARIABLES))
+MTG_RUN_VARIABLES = set(list(POPULATION_RUN_VARIABLES) + turgorgrowth_simulation.Simulation.SOILS_RUN_VARIABLES)
 
 # number of seconds in 1 hour
 HOUR_TO_SECOND_CONVERSION_FACTOR = 3600
@@ -69,18 +69,24 @@ class TurgorGrowthFacade(object):
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
                  model_organs_inputs_df,
+                 model_soils_inputs_df,
                  shared_axes_inputs_outputs_df,
                  shared_hiddenzones_inputs_outputs_df,
                  shared_elements_inputs_outputs_df,
                  shared_organs_inputs_outputs_df,
+                 shared_soils_inputs_outputs_df,
                  update_shared_df=True):
         """
                 :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
                 :param int delta_t: The delta between two runs, in seconds.
                 :param pandas.DataFrame model_hiddenzones_inputs_df: the inputs of the model at hiddenzones scale.
                 :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
+                :param pandas.DataFrame model_organs_inputs_df: the inputs of the model at organ scale.
+                :param pandas.DataFrame model_soils_inputs_df: the inputs of the model at soils scale.
                 :param pandas.DataFrame shared_hiddenzones_inputs_outputs_df: the dataframe of inputs and outputs at hiddenzones scale shared between all models.
                 :param pandas.DataFrame shared_elements_inputs_outputs_df: the dataframe of inputs and outputs at elements scale shared between all models.
+                :param pandas.DataFrame shared_organs_inputs_outputs_df: the dataframe of inputs and outputs at organ scale shared between all models.
+                :param pandas.DataFrame shared_soils_inputs_outputs_df: the dataframe of inputs and outputs at soils scale shared between all models.
                 :param bool update_shared_df: If `True`  update the shared dataframes at init and at each run (unless stated otherwise)
         """
         
@@ -88,57 +94,91 @@ class TurgorGrowthFacade(object):
 
         self._simulation = turgorgrowth_simulation.Simulation(delta_t=delta_t)
 
-        self.population, mapping_topology = turgorgrowth_converter.from_dataframes(model_axes_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_organs_inputs_df)
+        self.population, self.soils = turgorgrowth_converter.from_dataframes(model_axes_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_organs_inputs_df, model_soils_inputs_df)
 
-        self._simulation.initialize(self.population, mapping_topology)
+        self._simulation.initialize(self.population, self.soils)
 
         self._update_shared_MTG()
 
         self._shared_axes_inputs_outputs_df = shared_axes_inputs_outputs_df         #: the dataframe at axes scale shared between all models
         self._shared_hiddenzones_inputs_outputs_df = shared_hiddenzones_inputs_outputs_df         #: the dataframe at hiddenzones scale shared between all models
         self._shared_elements_inputs_outputs_df = shared_elements_inputs_outputs_df               #: the dataframe at elements scale shared between all models
-        self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df
+        self._shared_organs_inputs_outputs_df = shared_organs_inputs_outputs_df  #: the dataframe at organs scale shared between all models
+        self._shared_soils_inputs_outputs_df = shared_soils_inputs_outputs_df  #: the dataframe at soils scale shared between all models
         self._update_shared_df = update_shared_df
         if self._update_shared_df:
             self._update_shared_dataframes(turgorgrowth_axes_data_df=model_axes_inputs_df,
                                            turgorgrowth_hiddenzones_data_df=model_hiddenzones_inputs_df,
                                            turgorgrowth_elements_data_df=model_elements_inputs_df,
-                                           turgorgrowth_organs_data_df=model_organs_inputs_df)
+                                           turgorgrowth_organs_data_df=model_organs_inputs_df,
+                                           turgorgrowth_soils_data_df=model_soils_inputs_df)
 
-    def run(self, SRWC=80, update_shared_df=False):
+    def run(self, update_shared_df=False):
 
         """
         Run the model and update the MTG and the dataframes shared between all models.
         """
 
-        self._initialize_model(SRWC=SRWC)
+        self._initialize_model()
         self._simulation.run()
         self._update_shared_MTG()
 
         if update_shared_df or (update_shared_df is None and self._update_shared_df):
-            turgorgrowth_axes_inputs_outputs_df, turgorgrowth_hiddenzones_inputs_outputs_df, turgorgrowth_elements_inputs_outputs_df, turgorgrowth_organs_inputs_outputs_df = turgorgrowth_converter.to_dataframes(self._simulation.population)
+            (_, turgorgrowth_axes_inputs_outputs_df, _, turgorgrowth_organs_inputs_outputs_df, turgorgrowth_hiddenzones_inputs_outputs_df, turgorgrowth_elements_inputs_outputs_df,
+             turgorgrowth_soils_inputs_outputs_df) = turgorgrowth_converter.to_dataframes(self._simulation.population, self._simulation.soils)
 
             self._update_shared_dataframes(turgorgrowth_axes_data_df=turgorgrowth_axes_inputs_outputs_df,
                                            turgorgrowth_hiddenzones_data_df=turgorgrowth_hiddenzones_inputs_outputs_df,
                                            turgorgrowth_elements_data_df=turgorgrowth_elements_inputs_outputs_df,
-                                           turgorgrowth_organs_data_df=turgorgrowth_organs_inputs_outputs_df)
+                                           turgorgrowth_organs_data_df=turgorgrowth_organs_inputs_outputs_df,
+                                           turgorgrowth_soils_data_df=turgorgrowth_soils_inputs_outputs_df)
 
     @staticmethod
-    def postprocessing(axes_outputs_df, hiddenzone_outputs_df, elements_outputs_df, organs_outputs_df,  delta_t):
+    def postprocessing(axes_outputs_df, hiddenzone_outputs_df, elements_outputs_df, organs_outputs_df, soils_outputs_df, delta_t):
         """
         Run the postprocessing.
+
+        :param pandas.DataFrame axes_outputs_df: the outputs of the model at axis scale.
+        :param pandas.DataFrame organs_outputs_df: the outputs of the model at organ scale.
+        :param pandas.DataFrame hiddenzone_outputs_df: the outputs of the model at hiddenzone scale.
+        :param pandas.DataFrame elements_outputs_df: the outputs of the model at element scale.
+        :param pandas.DataFrame soils_outputs_df: the outputs of the model at element scale.
+        :param int delta_t: The delta between two runs, in seconds.
+
+    :return: post-processing for each scale:
+            * plant (see :attr:`PLANTS_RUN_POSTPROCESSING_VARIABLES`)
+            * axis (see :attr:`AXES_RUN_POSTPROCESSING_VARIABLES`)
+            * metamer (see :attr:`PHYTOMERS_RUN_POSTPROCESSING_VARIABLES`)
+            * organ (see :attr:`ORGANS_RUN_POSTPROCESSING_VARIABLES`)
+            * hidden zone (see :attr:`HIDDENZONE_RUN_POSTPROCESSING_VARIABLES`)
+            * element (see :attr:`ELEMENTS_RUN_POSTPROCESSING_VARIABLES`)
+            * and soil (see :attr:`SOILS_RUN_POSTPROCESSING_VARIABLES`)
+        depending of the dataframes given as argument.
+        For example, if user passes only dataframes `plants_df`, `axes_df` and `metamers_df`,
+        then only post-processing dataframes of plants, axes and metamers are returned.
+    :rtype: tuple [pandas.DataFrame]
         """
-        (axes_postprocessing_df, hiddenzones_postprocessing_df, elements_postprocessing_df, organs_postprocessing_df) = turgorgrowth_postprocessing.postprocessing(axes_df=axes_outputs_df, hiddenzones_df=hiddenzone_outputs_df, elements_df=elements_outputs_df, organs_df=organs_outputs_df, delta_t=delta_t)
-        return axes_postprocessing_df, hiddenzones_postprocessing_df, elements_postprocessing_df, organs_postprocessing_df
+
+        (axes_postprocessing_df, hiddenzones_postprocessing_df, elements_postprocessing_df, organs_postprocessing_df, soils_postprocessing_df) = (
+            turgorgrowth_postprocessing.postprocessing(axes_df=axes_outputs_df, hiddenzones_df=hiddenzone_outputs_df, elements_df=elements_outputs_df, organs_df=organs_outputs_df, soils_df= soils_outputs_df, delta_t=delta_t))
+        return axes_postprocessing_df, hiddenzones_postprocessing_df, elements_postprocessing_df, organs_postprocessing_df, soils_postprocessing_df
 
     @staticmethod
-    def graphs(axes_postprocessing_df, hiddenzones_postprocessing_df, elements_postprocessing_df, organs_postprocessing_df, graphs_dirpath='.'):
+    def graphs(axes_postprocessing_df, hiddenzones_postprocessing_df, elements_postprocessing_df, organs_postprocessing_df, soils_postprocessing_df, graphs_dirpath='.'):
         """
         Generate the graphs and save them into `graphs_dirpath`.
-        """
-        turgorgrowth_postprocessing.generate_graphs(axes_df=axes_postprocessing_df, hiddenzones_df=hiddenzones_postprocessing_df, elements_df=elements_postprocessing_df, organs_df=organs_postprocessing_df, graphs_dirpath=graphs_dirpath)
 
-    def _initialize_model(self, SRWC=80):
+        :param pandas.DataFrame axes_postprocessing_df: CN-Wheat outputs at axis scale
+        :param pandas.DataFrame hiddenzones_postprocessing_df: CN-Wheat outputs at hidden zone scale
+        :param pandas.DataFrame organs_postprocessing_df: CN-Wheat outputs at organ scale
+        :param pandas.DataFrame elements_postprocessing_df: CN-Wheat outputs at element scale
+        :param pandas.DataFrame soils_postprocessing_df: CN-Wheat outputs at soil scale
+        :param str graphs_dirpath: the path of the directory to save the generated graphs in
+        """
+        turgorgrowth_postprocessing.generate_graphs(axes_df=axes_postprocessing_df, hiddenzones_df=hiddenzones_postprocessing_df, elements_df=elements_postprocessing_df,
+                                                    organs_df=organs_postprocessing_df, soils_df=soils_postprocessing_df, graphs_dirpath=graphs_dirpath)
+
+    def _initialize_model(self):
         """
         Initialize the inputs of the model from the MTG shared between all models.
         """
@@ -312,7 +352,7 @@ class TurgorGrowthFacade(object):
             if is_valid_plant:
                 self.population.plants.append(turgorgrowth_plant)
 
-        self._simulation.initialize(self.population, mapping_topology, SRWC=SRWC)
+        self._simulation.initialize(self.population, self.soils)
 
     def _update_shared_MTG(self):
         """
@@ -460,9 +500,31 @@ class TurgorGrowthFacade(object):
                         total_organ_length = organ_visible_length + organ_hidden_length
                         self._shared_mtg.property('length')[mtg_organ_vid] = total_organ_length
 
-    def _update_shared_dataframes(self, turgorgrowth_axes_data_df=None, turgorgrowth_hiddenzones_data_df=None, turgorgrowth_elements_data_df=None, turgorgrowth_organs_data_df=None):
+                #: Temporary: Store Soil variables at axis level
+                axis_id = (turgorgrowth_plant_index, turgorgrowth_axis_label)
+                if axis_id in self.soils.keys():
+                    if 'soil' not in self._shared_mtg.get_vertex_property(mtg_axis_vid):
+                        # Add a property describing the organ to the current axis of the MTG
+                        self._shared_mtg.property('soil')[mtg_axis_vid] = {}
+                    # Update the property describing the organ of the current axis in the MTG
+                    mtg_soil_properties = self._shared_mtg.get_vertex_property(mtg_axis_vid)['soil']
+                    for turgorgrowth_property_name in turgorgrowth_simulation.Simulation.SOILS_RUN_VARIABLES:
+                        if hasattr(self.soils[axis_id], turgorgrowth_property_name):
+                            mtg_soil_properties[turgorgrowth_property_name] = getattr(self.soils[axis_id], turgorgrowth_property_name)
+
+    def _update_shared_dataframes(self, turgorgrowth_axes_data_df=None, turgorgrowth_organs_data_df=None,
+                                  turgorgrowth_hiddenzones_data_df=None, turgorgrowth_elements_data_df=None,
+                                  turgorgrowth_soils_data_df=None,
+                                  cnwheat_soils_data_df=None):
         """
-        Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the turgorgrowth model.
+        Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the cnwheat model.
+
+        :param pandas.DataFrame turgorgrowth_axes_data_df: CN-Wheat shared dataframe at axis scale
+        :param pandas.DataFrame turgorgrowth_organs_data_df: CN-Wheat shared dataframe at organ scale
+        :param pandas.DataFrame turgorgrowth_hiddenzones_data_df: CN-Wheat shared dataframe hiddenzone scale
+        :param pandas.DataFrame turgorgrowth_elements_data_df: CN-Wheat shared dataframe at element scale
+        :param pandas.DataFrame turgorgrowth_soils_data_df: CN-Wheat shared dataframe at soil scale
+        :param pandas.DataFrame cnwheat_soils_data_df: CN-Wheat shared dataframe at soil scale
         """
 
         for turgorgrowth_data_df, \
@@ -470,6 +532,8 @@ class TurgorGrowthFacade(object):
             shared_inputs_outputs_df in ((turgorgrowth_axes_data_df, turgorgrowth_simulation.Simulation.AXES_INDEXES, self._shared_axes_inputs_outputs_df),
                                          (turgorgrowth_hiddenzones_data_df, turgorgrowth_simulation.Simulation.HIDDENZONES_INDEXES, self._shared_hiddenzones_inputs_outputs_df),
                                          (turgorgrowth_elements_data_df, turgorgrowth_simulation.Simulation.ELEMENTS_INDEXES, self._shared_elements_inputs_outputs_df),
-                                         (turgorgrowth_organs_data_df, turgorgrowth_simulation.Simulation.ORGANS_INDEXES, self._shared_organs_inputs_outputs_df)):
-            # if turgorgrowth_data_df is None: continue
+                                         (turgorgrowth_organs_data_df, turgorgrowth_simulation.Simulation.ORGANS_INDEXES, self._shared_organs_inputs_outputs_df),
+                                         (turgorgrowth_soils_data_df, turgorgrowth_simulation.Simulation.SOILS_INDEXES, self._shared_soils_inputs_outputs_df)):
+
+            if turgorgrowth_data_df is None: continue
             tools.combine_dataframes_inplace(turgorgrowth_data_df, shared_inputs_outputs_indexes, shared_inputs_outputs_df)

@@ -191,16 +191,15 @@ def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
 # TEST VICTORIA 09.2024 ------------------------------------------------------------------------------------------------
 def color_MTG_water(g, df, t, SCREENSHOT_DIRPATH):
     def color_map(psi):
-        if -0.5 <= psi <= -0.1:     # Bleu clair
-            # vid_colors = [173, 216, 230]
-            vid_colors = [0, int(255 + psi * 100), 255]
-        elif -0.1 < psi <= 0:   # Bleu foncé
-            # vid_colors = [0, 0, 139]
-            vid_colors = [0, 0, int(255 + psi * 1000)]
-        else:   # Rouge
-            # vid_colors = [255, 0, 0]
-            vid_colors = [int(255 + psi * 100), 0, ]
-        # vid_colors = [0, 0, int(255 + psi * 10)]
+        if -0.5 <= psi <= -0.1:     # Bleu clair TODO gradué
+            vid_colors = [173, 216, 230]
+        elif -0.1 < psi <= 0:   # Bleu foncé TODO gradué
+            # vid_colors = [int(255 - psi * 51), int(255 - psi * 20), 50]
+            # vid_colors = [int(255 + psi * 51), int(255 + psi * 20), 50]
+            vid_colors = [0, 0, 139]
+        else:   # Rouge TODO gradué
+            vid_colors = [255, 0, 0]
+        # vid_colors = [int(255 - psi * 51), int(255 - psi * 20), 50]
         return vid_colors
 
     def calculate_Total_Water_Potential(osmotic_water_potential, turgor_water_potential):
