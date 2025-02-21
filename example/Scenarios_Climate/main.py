@@ -8,6 +8,7 @@ import warnings
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
+from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
@@ -63,13 +64,39 @@ def save_df_to_csv(df, outputs_filepath, precision):
         warnings.warn('File will be saved at {}'.format(newpath))
 
 
-def main(simulation_length, forced_start_time=0,
-         run_simu=True, run_postprocessing=True, generate_graphs=True, run_from_outputs=False, stored_times=None,
-         option_static=False, show_3Dplant=False, tillers_replications=True, heterogeneous_canopy=True,
-         N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessings', GRAPHS_DIRPATH='graphs'):
+def rehydration_schedule(water_content_mini, SRWC_target, AWC, rehydration_duration):
+    """
 
+    :param float water_content_mini: soil water content at minimal SRWC (g)
+    :param float SRWC_target: Target SRWC for rehydration  (%)
+    :param float AWC: Available Water Capacity (g)
+    :param float rehydration_duration: duration of the rehydration period (days)
+
+    :return: float hourly_irrigation: Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
+    """
+
+    total_irrigation = (SRWC_target * AWC) - water_content_mini  # Total amount of water to add to the soil in order to reach the target SRWC
+    hourly_irrigation = total_irrigation / (rehydration_duration * 24)  # Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
+    return hourly_irrigation
+
+
+def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True,
+         run_from_outputs=False, stored_times=None,
+         option_static=False, show_3Dplant=True, tillers_replications=True, heterogeneous_canopy=True,
+         N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
+         INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
+         # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
+         # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
+         # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
+         # OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
+         OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
+         # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
+         # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
+         # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
+         # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
+         # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
+         GRAPHS_COMPARISON_DIRPATH='graphs_comparison', SCREENSHOT_DIRPATH='adel_save',
+         drought_trigger=False, stop_drought_SRWC=False):
     """
     Run a simulation of fspmwheat with coupling to several models
 
@@ -144,12 +171,23 @@ def main(simulation_length, forced_start_time=0,
 
     # -- INPUTS CONFIGURATION --
 
+    # Path of the directory which contains the inputs of the model
+    INPUTS_DIRPATH = INPUTS_DIRPATH
+
     # Name of the CSV files which describes the initial state of the system
     AXES_INITIAL_STATE_FILENAME = 'axes_initial_state.csv'
     ORGANS_INITIAL_STATE_FILENAME = 'organs_initial_state.csv'
     HIDDENZONES_INITIAL_STATE_FILENAME = 'hiddenzones_initial_state.csv'
     ELEMENTS_INITIAL_STATE_FILENAME = 'elements_initial_state.csv'
     SOILS_INITIAL_STATE_FILENAME = 'soils_initial_state.csv'
+
+    # Name of the CSV files which contain the Tr, green_area and SRWC forcings
+    METEO_FORCINGS_FILENAME = 'meteo_Ljutovac2002.csv'
+    METEO_SIMPLE_FORCINGS_FILENAME = 'meteo_simple.csv'
+
+    # Name of the CSV files which describes the forcings values of hiddenzone
+    # Sucrose, amino acids and proteins for osmotic water potential calculation
+    HIDDENZONES_FORCINGS_FILENAME = 'hiddenzones_forcings.csv'
 
     # Read the inputs from CSV files and create inputs dataframes
     inputs_dataframes = {}
@@ -211,7 +249,16 @@ def main(simulation_length, forced_start_time=0,
     START_TIME = max(0, new_start_time)
 
     # Name of the CSV files which contains the meteo data
-    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FILENAME), index_col='t', sep=',')
+    meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), index_col='t', sep=',')
+    # meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_SIMPLE_FORCINGS_FILENAME), index_col='t', sep=',')
+
+    drought_trigger = drought_trigger  # plant green area at which the drought treatment starts (m2)
+    drought_ongoing = False  # Is the drought event ongoing (bool)
+    drought_passed = False  # Has the drought event occured (bool)
+    stop_drought_SRWC = stop_drought_SRWC  # SRWC at which the drought event stops (%)
+    SRWC_target = 80.  # Target SRWC for rehydration
+    rehydration = False # Ongoing rehydration period (bool)
+    rehydration_duration = 15.  # duration of the rehydration period (days)
 
     # -- OUTPUTS CONFIGURATION --
 
@@ -242,19 +289,11 @@ def main(simulation_length, forced_start_time=0,
     # -- POSTPROCESSING CONFIGURATION --
 
     # Name of the CSV files which will contain the postprocessing of the model
-    # Separation between posprocessing of CN-Wheat and TurgorGrowth
-
-    AXES_POSTPROCESSING_FILENAME_cnwheat = 'axes_postprocessing_cnwheat.csv'
-    ORGANS_POSTPROCESSING_FILENAME_cnwheat = 'organs_postprocessing_cnwheat.csv'
-    HIDDENZONES_POSTPROCESSING_FILENAME_cnwheat = 'hiddenzones_postprocessing_cnwheat.csv'
-    ELEMENTS_POSTPROCESSING_FILENAME_cnwheat = 'elements_postprocessing_cnwheat.csv'
-    SOILS_POSTPROCESSING_FILENAME_cnwheat = 'soils_postprocessing_cnwheat.csv'
-
-    AXES_POSTPROCESSING_FILENAME_turgor = 'axes_postprocessing_turgor.csv'
-    ORGANS_POSTPROCESSING_FILENAME_turgor = 'organs_postprocessing_turgor.csv'
-    HIDDENZONES_POSTPROCESSING_FILENAME_turgor = 'hiddenzones_postprocessing_turgor.csv'
-    ELEMENTS_POSTPROCESSING_FILENAME_turgor = 'elements_postprocessing_turgor.csv'
-    SOILS_POSTPROCESSING_FILENAME_turgor = 'soils_postprocessing_turgor.csv'
+    AXES_POSTPROCESSING_FILENAME = 'axes_postprocessing.csv'
+    ORGANS_POSTPROCESSING_FILENAME = 'organs_postprocessing.csv'
+    HIDDENZONES_POSTPROCESSING_FILENAME = 'hiddenzones_postprocessing.csv'
+    ELEMENTS_POSTPROCESSING_FILENAME = 'elements_postprocessing.csv'
+    SOILS_POSTPROCESSING_FILENAME = 'soils_postprocessing.csv'
 
     # -- ADEL and MTG CONFIGURATION --
 
@@ -266,16 +305,19 @@ def main(simulation_length, forced_start_time=0,
     # ----- CONFIGURATION OF THE FACADES -------
     # ---------------------------------------------
 
+    # if LOG_EXECUTION:
+    #     from cnwheat import tools as cnwheat_tools
+    #     import logging
+    #     # Setup the logging
+    #     cnwheat_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=logging.DEBUG,
+    #                                log_model=True, log_compartments=True, log_derivatives=True, remove_old_logs=True)
+
     if LOG_EXECUTION:
-        from cnwheat import tools as cnwheat_tools
         from turgorgrowth import tools as turgor_tools
         import logging
         # Setup the logging
-        cnwheat_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=logging.DEBUG,
-                                   log_model=True, log_compartments=True, log_derivatives=True, remove_old_logs=True)
         turgor_tools.setup_logging(config_filepath=LOGGING_CONFIG_FILEPATH, level=logging.DEBUG,
                                    log_model=True, log_compartments=True, log_derivatives=True, remove_old_logs=True)
-
 
     # -- ELONGWHEAT (created first because it is the only facade to add new metamers) --
     # Initial states
@@ -340,6 +382,10 @@ def main(simulation_length, forced_start_time=0,
     else:
         update_parameters_turgorgrowth = {}
 
+    turgorgrowth_soils_initial_state = inputs_dataframes[SOILS_INITIAL_STATE_FILENAME][
+        [i for i in turgorgrowth_facade.turgorgrowth_converter.SOILS_VARIABLES if
+         i in inputs_dataframes[SOILS_INITIAL_STATE_FILENAME].columns]].copy()
+
     # Facade initialisation
     turgorgrowth_facade_ = turgorgrowth_facade.TurgorGrowthFacade(g,
                                                                   TURGORGROWTH_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
@@ -347,10 +393,12 @@ def main(simulation_length, forced_start_time=0,
                                                                   turgorgrowth_hiddenzones_initial_state,
                                                                   turgorgrowth_elements_initial_state,
                                                                   turgorgrowth_organs_initial_state,
+                                                                  turgorgrowth_soils_initial_state,
                                                                   shared_axes_inputs_outputs_df,
                                                                   shared_hiddenzones_inputs_outputs_df,
                                                                   shared_elements_inputs_outputs_df,
                                                                   shared_organs_inputs_outputs_df,
+                                                                  shared_soils_inputs_outputs_df,
                                                                   update_shared_df=UPDATE_SHARED_DF)
 
     # -- CARIBU --
@@ -507,7 +555,6 @@ def main(simulation_length, forced_start_time=0,
         cnwheat_facade_.soils[(1, 'MS')].nitrates = N_fertilizations['constant_Conc_Nitrates'] * cnwheat_facade_.soils[
             (1, 'MS')].volume
 
-
     # -- FSPMWHEAT --
     # Facade initialisation
     fspmwheat_facade_ = fspmwheat_facade.FSPMWheatFacade(g)
@@ -539,10 +586,22 @@ def main(simulation_length, forced_start_time=0,
 
                 caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky',
                                    heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
+                # try:
+                #     # print('CARIBU hz', (g.get_vertex_property(69)['leaf_Wmax']))
+                #     print('CARIBU ele', g.get_vertex_property(815)['is_growing'])
+                #     print('CARIBU or', g.get_vertex_property(60)['is_growing'])
+                # except:
+                #     pass
 
                 for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
                     senescwheat_facade_.run()
+                    # try:
+                    #     # print('SENESC hz', (g.get_vertex_property(69)['leaf_Wmax']))
+                    #     print('SENESC ele', g.get_vertex_property(815)['is_growing'])
+                    #     print('SENESC or', g.get_vertex_property(60)['is_growing'])
+                    # except:
+                    #     pass
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
                     if not shared_elements_inputs_outputs_df.empty and \
@@ -567,31 +626,94 @@ def main(simulation_length, forced_start_time=0,
 
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur, SRWC)
+                        # try:
+                        #     # print('FARQUHAR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                        #     print('FARQUHAR ele', g.get_vertex_property(815)['is_growing'])
+                        #     print('FARQUHAR or', g.get_vertex_property(60)['is_growing'])
+                        # except:
+                        #     pass
 
                         for t_elongwheat in range(t_farquharwheat, t_farquharwheat + FARQUHARWHEAT_TIMESTEP,
                                                   ELONGWHEAT_TIMESTEP):
                             # run ElongWheat
                             Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
                             elongwheat_facade_.run(Tair, Tsoil, option_static=option_static)
+                            # try:
+                            #     # print('ELONG hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                            #     print('ELONG ele', g.get_vertex_property(815)['is_growing'])
+                            #     print('ELONG or', g.get_vertex_property(60)['is_growing'])
+                            # except:
+                            #     pass
+
                             # Update geometry
                             adel_wheat.update_geometry(g)
                             if show_3Dplant:
                                 adel_wheat.plot(g)
+                            # try:
+                            #     # print('ADEL hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                            #     print('ADEL ele', g.get_vertex_property(815)['is_growing'])
+                            #     print('ADEL or', g.get_vertex_property(60)['is_growing'])
+                            # except:
+                            #     pass
 
                             for t_turgorgrowth in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP,
                                                         TURGORGROWTH_TIMESTEP):
-                                SRWC, temperature = meteo.loc[t_turgorgrowth, ['SRWC', 'air_temperature']]
-                                turgorgrowth_facade_.run(SRWC)
+                                if drought_trigger and (turgorgrowth_facade_.population.plants[0].axes[0].green_area >= drought_trigger or drought_ongoing) and not drought_passed:
+                                    drought_ongoing = True
+                                    turgor_soil = turgorgrowth_facade_.soils[(1, 'MS')]
+                                    turgor_soil.constant_water_content = False
+                                    # Maximum of drought, start of rehydration
+                                    if turgor_soil.SRWC <= stop_drought_SRWC and not rehydration:
+                                        rehydration = True
+                                        hourly_rehydration = rehydration_schedule(turgor_soil.water_content, SRWC_target, turgor_soil.PARAMETERS.AWC, rehydration_duration)
+                                    # Ongoing rehydration
+                                    elif rehydration:
+                                        # Target SRWC reached after rehydration, end of drought event
+                                        if turgor_soil.SRWC >= SRWC_target:
+                                            rehydration = False
+                                            drought_ongoing = False
+                                            drought_passed = True
+                                            turgor_soil.water_content = SRWC_target * turgor_soil.PARAMETERS.AWC
+                                            turgor_soil.SRWC = SRWC_target
+                                            turgor_soil.constant_water_content = True
+                                        # Rehydration
+                                        else:
+                                            turgor_soil.water_content += hourly_rehydration
+
+                                turgorgrowth_facade_.run()
+                                # try:
+                                #     # print('TURGOR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                                #     print('TURGOR ele', g.get_vertex_property(815)['is_growing'])
+                                #     print('TURGOR or', g.get_vertex_property(60)['is_growing'])
+                                # except:
+                                #     pass
 
                                 # Update geometry
                                 adel_wheat.update_geometry(g)
                                 if show_3Dplant:
                                     adel_wheat.plot(g)
+                                # try:
+                                #     # print('ADEL hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                                #     print('ADEL ele', g.get_vertex_property(815)['is_growing'])
+                                #     print('ADEL or', g.get_vertex_property(60)['is_growing'])
+                                # except:
+                                #     pass
+
+                                # Adel 3D plant save
+                                # adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
+                                adel_wheat.scene(g).save(r'adel_save\t{}.bgeom'.format(t_turgorgrowth))
 
                                 for t_growthwheat in range(t_turgorgrowth, t_turgorgrowth + TURGORGROWTH_TIMESTEP,
                                                            GROWTHWHEAT_TIMESTEP):
                                     # run GrowthWheat
                                     growthwheat_facade_.run()
+                                    # try:
+                                    #     # print('GROWTH hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                                    #     print('GROWTH ele', g.get_vertex_property(815)['is_growing'])
+                                    #     print('GROWTH or', g.get_vertex_property(60)['is_growing'])
+                                    # except:
+                                    #     pass
+
                                     for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP,
                                                            CNWHEAT_TIMESTEP):
                                         print('t cnwheat is {}'.format(t_cnwheat))
@@ -606,6 +728,12 @@ def main(simulation_length, forced_start_time=0,
                                             Tair = meteo.loc[t_elongwheat, 'air_temperature']
                                             Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
                                             cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
+                                        # try:
+                                        #     # print('CN hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
+                                        #     print('CN ele', g.get_vertex_property(815)['is_growing'])
+                                        #     print('CN or', g.get_vertex_property(60)['is_growing'])
+                                        # except:
+                                        #     pass
 
                                         # append outputs at current step to global lists
                                         if (stored_times == 'all') or (t_cnwheat in stored_times):
@@ -683,6 +811,21 @@ def main(simulation_length, forced_start_time=0,
             delta_t = CNWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR
 
         # run the postprocessing
+        # Separation between posprocessing of CN-Wheat and TurgorGrowth
+
+        AXES_POSTPROCESSING_FILENAME_cnwheat = 'axes_postprocessing_cnwheat.csv'
+        ORGANS_POSTPROCESSING_FILENAME_cnwheat = 'organs_postprocessing_cnwheat.csv'
+        HIDDENZONES_POSTPROCESSING_FILENAME_cnwheat = 'hiddenzones_postprocessing_cnwheat.csv'
+        ELEMENTS_POSTPROCESSING_FILENAME_cnwheat = 'elements_postprocessing_cnwheat.csv'
+        SOILS_POSTPROCESSING_FILENAME_cnwheat = 'soils_postprocessing_cnwheat.csv'
+
+        AXES_POSTPROCESSING_FILENAME_turgor = 'axes_postprocessing_turgor.csv'
+        ORGANS_POSTPROCESSING_FILENAME_turgor = 'organs_postprocessing_turgor.csv'
+        HIDDENZONES_POSTPROCESSING_FILENAME_turgor = 'hiddenzones_postprocessing_turgor.csv'
+        ELEMENTS_POSTPROCESSING_FILENAME_turgor = 'elements_postprocessing_turgor.csv'
+        SOILS_POSTPROCESSING_FILENAME_turgor = 'soils_postprocessing_turgor.csv'
+
+        # run the postprocessing
         axes_postprocessing_file_basename_cnwheat = AXES_POSTPROCESSING_FILENAME_cnwheat.split('.')[0]
         hiddenzones_postprocessing_file_basename_cnwheat = HIDDENZONES_POSTPROCESSING_FILENAME_cnwheat.split('.')[0]
         organs_postprocessing_file_basename_cnwheat = ORGANS_POSTPROCESSING_FILENAME_cnwheat.split('.')[0]
@@ -713,14 +856,14 @@ def main(simulation_length, forced_start_time=0,
         (postprocessing_df_dict_turgor[axes_postprocessing_file_basename_turgor],
          postprocessing_df_dict_turgor[hiddenzones_postprocessing_file_basename_turgor],
          postprocessing_df_dict_turgor[elements_postprocessing_file_basename_turgor],
-         # postprocessing_df_dict_turgor[soils_postprocessing_file_basename_turgor], \
-         postprocessing_df_dict_turgor[organs_postprocessing_file_basename_turgor]) \
+         postprocessing_df_dict_turgor[organs_postprocessing_file_basename_turgor],
+         postprocessing_df_dict_turgor[soils_postprocessing_file_basename_turgor]) \
             = turgorgrowth_facade.TurgorGrowthFacade.postprocessing(
             axes_outputs_df=outputs_df_dict[AXES_OUTPUTS_FILENAME.split('.')[0]],
             hiddenzone_outputs_df=outputs_df_dict[HIDDENZONES_OUTPUTS_FILENAME.split('.')[0]],
             elements_outputs_df=outputs_df_dict[ELEMENTS_OUTPUTS_FILENAME.split('.')[0]],
-            # soil_outputs_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]],
             organs_outputs_df=outputs_df_dict[ORGANS_OUTPUTS_FILENAME.split('.')[0]],
+            soils_outputs_df=outputs_df_dict[SOILS_OUTPUTS_FILENAME.split('.')[0]],
             delta_t=delta_t)
 
         for postprocessing_file_basename, postprocessing_filename in (
@@ -739,8 +882,8 @@ def main(simulation_length, forced_start_time=0,
                 (axes_postprocessing_file_basename_turgor, AXES_POSTPROCESSING_FILENAME_turgor),
                 (hiddenzones_postprocessing_file_basename_turgor, HIDDENZONES_POSTPROCESSING_FILENAME_turgor),
                 (organs_postprocessing_file_basename_turgor, ORGANS_POSTPROCESSING_FILENAME_turgor),
-                (elements_postprocessing_file_basename_turgor, ELEMENTS_POSTPROCESSING_FILENAME_turgor)):
-            # (soils_postprocessing_file_basename_turgor, SOILS_POSTPROCESSING_FILENAME_turgor)):
+                (elements_postprocessing_file_basename_turgor, ELEMENTS_POSTPROCESSING_FILENAME_turgor),
+                (soils_postprocessing_file_basename_turgor, SOILS_POSTPROCESSING_FILENAME_turgor)):
             postprocessing_filepath = os.path.join(POSTPROCESSING_DIRPATH, postprocessing_filename)
             postprocessing_df_dict_turgor[postprocessing_file_basename].to_csv(postprocessing_filepath, na_rep='NA',
                                                                                index=False, float_format='%.{}f'.format(
@@ -815,14 +958,29 @@ def main(simulation_length, forced_start_time=0,
                 hiddenzones_postprocessing_file_basename_turgor],
             organs_postprocessing_df=postprocessing_df_dict_turgor[organs_postprocessing_file_basename_turgor],
             elements_postprocessing_df=postprocessing_df_dict_turgor[elements_postprocessing_file_basename_turgor],
-            # soils_postprocessing_df=postprocessing_df_dict_turgor[soils_postprocessing_file_basename_turgor],
+            soils_postprocessing_df=postprocessing_df_dict_turgor[soils_postprocessing_file_basename_turgor],
             graphs_dirpath=GRAPHS_DIRPATH)
 
         # --- Additional graphs
 
+        # Flux potentiel hydriques dans la plante
+        # df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
+        # df_elt_outputs = df_elt_outputs.loc[(df_elt_outputs.axis == 'MS') & (df_elt_outputs.element != 'HiddenElement') & (df_elt_outputs.organ != 'internode')]
+        # fig = fspmwheat.tools.color_MTG_water(g, df_elt_outputs, time.time(), SCREENSHOT_DIRPATH)
+
         from cnwheat import tools as cnwheat_tools
         colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey', 'lime']
         colors = colors + colors
+
+        # 10) Meteo : CO2
+        meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), sep=',')
+        fig, ax = plt.subplots()
+        ax.plot(meteo['t'], meteo['ambient_CO2'])
+        ax.legend(fontsize=8, loc="upper right")
+        ax.set_ylabel('CO2 (ppm)')
+        ax.set_xlabel('Time (h)')
+        plt.savefig(os.path.join(GRAPHS_DIRPATH, 'CO2' + '.PNG'))
+        plt.close()
 
         # 9) Osmotic adjustement
 
@@ -1279,13 +1437,14 @@ def main(simulation_length, forced_start_time=0,
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=2100, run_simu=True, run_postprocessing=True, generate_graphs=True,
-         run_from_outputs=False,
+    main(2500, forced_start_time=5, run_simu=True, run_postprocessing=True, generate_graphs=True,
+         run_from_outputs=True,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          # show_3Dplant=False, option_static=False, tillers_replications=None,
          heterogeneous_canopy=True,
          N_fertilizations={2016: 357143, 2520: 1000000},
          # N_fertilizations={'constant_Conc_Nitrates': 328000},
          # heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
-         PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
-         # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')
+         PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv',
+         drought_trigger=False, stop_drought_SRWC=False)
+    # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')

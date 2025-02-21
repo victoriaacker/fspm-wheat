@@ -56,6 +56,18 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='scen
     if 'Fertilization' in scenario_parameters:
         N_FERTILIZATIONS = ast.literal_eval(scenario_parameters['Fertilization'])
 
+    # Tiller
+    TILLERS = {'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5}
+    if 'Tillers' in scenario_parameters:
+        TILLERS = ast.literal_eval(scenario_parameters['Tillers'])
+
+    # Drought
+    if 'drought_trigger' in scenario_parameters:
+        drought_trigger = scenario_parameters.get('drought_trigger', 'False')
+
+    if 'stop_drought_SRWC' in scenario_parameters:
+        stop_drought_SRWC = scenario_parameters.get('stop_drought_SRWC', 'False')
+
     if RUN_SIMU or RUN_POSTPROCESSING or GENERATE_GRAPHS:
 
         # -- SIMULATION DIRECTORIES --
@@ -94,7 +106,8 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='scen
                       INPUTS_DIRPATH=inputs_dirpath,
                       OUTPUTS_DIRPATH=scenario_outputs_dirpath,
                       POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
-                      tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5})
+                      tillers_replications=TILLERS,
+                      drought_trigger=drought_trigger, stop_drought_SRWC=stop_drought_SRWC)
             # if GENERATE_GRAPHS:
             #     additional_graphs.graph_summary(scenario_id, scenario_graphs_dirpath,
             #                                     graph_list=['LAI', 'sum_dry_mass_axis', 'shoot_roots_ratio_axis', 'N_content_shoot_axis', 'Conc_Amino_acids_phloem', 'Conc_Sucrose_phloem', 'leaf_Lmax',
