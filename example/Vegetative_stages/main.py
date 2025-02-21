@@ -75,7 +75,7 @@ def rehydration_schedule(water_content_mini, SRWC_target, AWC, rehydration_durat
     :return: float hourly_irrigation: Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
     """
 
-    total_irrigation = (SRWC_target * AWC) - water_content_mini  # Total amount of water to add to the soil in order to reach the target SRWC
+    total_irrigation = (SRWC_target / 100 * AWC) - water_content_mini  # Total amount of water to add to the soil in order to reach the target SRWC
     hourly_irrigation = total_irrigation / (rehydration_duration * 24)  # Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
     return hourly_irrigation
 
@@ -84,16 +84,16 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          run_from_outputs=False, stored_times=None,
          option_static=False, show_3Dplant=True, tillers_replications=True, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
-         # INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
+         INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
+         # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
          # OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
          # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
          # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
-         OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
+         # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
          # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
-         # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
+         OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
          # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
          GRAPHS_COMPARISON_DIRPATH='graphs_comparison', SCREENSHOT_DIRPATH='adel_save'):
     """
@@ -251,8 +251,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), index_col='t', sep=',')
     # meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_SIMPLE_FORCINGS_FILENAME), index_col='t', sep=',')
 
-    drought_trigger = 10E-4  # plant green area at which the drought treatment starts (m2)
-    # drought_trigger = 10  # plant green area at which the drought treatment starts (m2)
+    # drought_trigger = 10E-4  # plant green area at which the drought treatment starts (m2)
+    drought_trigger = 10  # plant green area at which the drought treatment starts (m2)
     drought_ongoing = False  # Is the drought event ongoing (bool)
     drought_passed = False  # Has the drought event occured (bool)
     stop_drought_SRWC = 20.  # SRWC at which the drought event stops (%)
@@ -625,7 +625,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                             t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'SRWC']]
 
                         # run FarquharWheat
-                        farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur, SRWC)
+                        farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
                         # try:
                         #     # print('FARQUHAR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
                         #     print('FARQUHAR ele', g.get_vertex_property(815)['is_growing'])
@@ -658,7 +658,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
                             for t_turgorgrowth in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP,
                                                         TURGORGROWTH_TIMESTEP):
-                                if (turgorgrowth_facade_.population.plants[0].axes[0].green_area >= drought_trigger or drought_ongoing) and not drought_passed:
+                                if drought_trigger and (turgorgrowth_facade_.population.plants[0].axes[0].green_area >= drought_trigger or drought_ongoing) and not drought_passed:
                                     drought_ongoing = True
                                     turgor_soil = turgorgrowth_facade_.soils[(1, 'MS')]
                                     turgor_soil.constant_water_content = False
@@ -1437,13 +1437,13 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=500, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(1500, forced_start_time=5, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          # show_3Dplant=False, option_static=False, tillers_replications=None,
          heterogeneous_canopy=True,
-         # N_fertilizations={2016: 357143, 2520: 1000000},
-         N_fertilizations={'constant_Conc_Nitrates': 328000},
+         N_fertilizations={2016: 357143, 2520: 1000000},
+         # N_fertilizations={'constant_Conc_Nitrates': 328000},
          # heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
          PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
     # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')
