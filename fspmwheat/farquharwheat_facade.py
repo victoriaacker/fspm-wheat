@@ -71,7 +71,7 @@ class FarquharWheatFacade(object):
         if self._update_shared_df:
             self._update_shared_dataframes(model_elements_inputs_df)
 
-    def run(self, Ta, ambient_CO2, RH, Ur, SRWC, update_shared_df=None):
+    def run(self, Ta, ambient_CO2, RH, Ur, update_shared_df=None):
         """
         Run the model and update the MTG and the dataframes shared between all models.
 
@@ -82,7 +82,7 @@ class FarquharWheatFacade(object):
         :param bool update_shared_df: if 'True', update the shared dataframes at this time step.
         """
         self._initialize_model()
-        self._simulation.run(Ta, ambient_CO2, RH, Ur, SRWC)
+        self._simulation.run(Ta, ambient_CO2, RH, Ur)
         self._update_shared_MTG({'elements': self._simulation.outputs, 'axes': ''})
 
         if update_shared_df or (update_shared_df is None and self._update_shared_df):
