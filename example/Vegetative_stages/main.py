@@ -86,15 +86,15 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         # INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
          # OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
          # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
          # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
          # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
          # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
-         OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
-         # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
+         # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
+         OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
+         # OUTPUTS_DIRPATH='outputs_400_SRWC20', POSTPROCESSING_DIRPATH='postprocessing_400_SRWC20', GRAPHS_DIRPATH='graphs_400_SRWC20',
          GRAPHS_COMPARISON_DIRPATH='graphs_comparison', SCREENSHOT_DIRPATH='adel_save'):
     """
     Run a simulation of fspmwheat with coupling to several models
@@ -251,7 +251,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), index_col='t', sep=',')
     # meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_SIMPLE_FORCINGS_FILENAME), index_col='t', sep=',')
 
-    # drought_trigger = 10E-4  # plant green area at which the drought treatment starts (m2)
+    # drought_trigger = 0.000000001  # plant green area at which the drought treatment starts (m2)
+    # drought_trigger = 0.00267  # plant green area at which the drought treatment starts (m2)
     drought_trigger = 10  # plant green area at which the drought treatment starts (m2)
     drought_ongoing = False  # Is the drought event ongoing (bool)
     drought_passed = False  # Has the drought event occured (bool)
@@ -621,8 +622,8 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                     for t_farquharwheat in range(t_senescwheat, t_senescwheat + SENESCWHEAT_TIMESTEP,
                                                  FARQUHARWHEAT_TIMESTEP):
                         # get the meteo of the current step
-                        Ta, ambient_CO2, RH, Ur, SRWC = meteo.loc[
-                            t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind', 'SRWC']]
+                        Ta, ambient_CO2, RH, Ur = meteo.loc[
+                            t_farquharwheat, ['air_temperature', 'ambient_CO2', 'humidity', 'Wind']]
 
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
@@ -1437,7 +1438,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(1500, forced_start_time=5, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(2500, forced_start_time=1156, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          # show_3Dplant=False, option_static=False, tillers_replications=None,
