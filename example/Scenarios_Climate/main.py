@@ -75,7 +75,7 @@ def rehydration_schedule(water_content_mini, SRWC_target, AWC, rehydration_durat
     :return: float hourly_irrigation: Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
     """
 
-    total_irrigation = (SRWC_target * AWC) - water_content_mini  # Total amount of water to add to the soil in order to reach the target SRWC
+    total_irrigation = (SRWC_target * AWC) / 100 - water_content_mini  # Total amount of water to add to the soil in order to reach the target SRWC
     hourly_irrigation = total_irrigation / (rehydration_duration * 24)  # Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
     return hourly_irrigation
 
@@ -634,7 +634,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                             rehydration = False
                                             drought_ongoing = False
                                             drought_passed = True
-                                            turgor_soil.water_content = SRWC_target * turgor_soil.PARAMETERS.AWC
+                                            turgor_soil.water_content = (SRWC_target * turgor_soil.PARAMETERS.AWC) / 100
                                             turgor_soil.SRWC = SRWC_target
                                             turgor_soil.constant_water_content = True
                                         # Rehydration
