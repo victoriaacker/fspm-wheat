@@ -134,7 +134,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
 
 
 if __name__ == '__main__':
-    scenario = 1
+    scenario = 3
     inputs = 'inputs'
     outputs = 'outputs'
 
