@@ -75,7 +75,7 @@ def rehydration_schedule(water_content_mini, SRWC_target, AWC, rehydration_durat
     :return: float hourly_irrigation: Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
     """
 
-    total_irrigation = (SRWC_target / 100 * AWC) - water_content_mini  # Total amount of water to add to the soil in order to reach the target SRWC
+    total_irrigation = (SRWC_target * AWC) / 100 - water_content_mini  # Total amount of water to add to the soil in order to reach the target SRWC
     hourly_irrigation = total_irrigation / (rehydration_duration * 24)  # Amount of water to add each hour to reach the target SRWC at the end of the rehydration period
     return hourly_irrigation
 
@@ -91,9 +91,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
          # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
          # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
-         # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
          # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
-         OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
+         # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
+         OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
          # OUTPUTS_DIRPATH='outputs_400_SRWC20', POSTPROCESSING_DIRPATH='postprocessing_400_SRWC20', GRAPHS_DIRPATH='graphs_400_SRWC20',
          GRAPHS_COMPARISON_DIRPATH='graphs_comparison', SCREENSHOT_DIRPATH='adel_save'):
     """
@@ -251,7 +251,6 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), index_col='t', sep=',')
     # meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_SIMPLE_FORCINGS_FILENAME), index_col='t', sep=',')
 
-    # drought_trigger = 0.000000001  # plant green area at which the drought treatment starts (m2)
     # drought_trigger = 0.00267  # plant green area at which the drought treatment starts (m2)
     drought_trigger = 10  # plant green area at which the drought treatment starts (m2)
     drought_ongoing = False  # Is the drought event ongoing (bool)
@@ -674,7 +673,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                             rehydration = False
                                             drought_ongoing = False
                                             drought_passed = True
-                                            turgor_soil.water_content = SRWC_target * turgor_soil.PARAMETERS.AWC
+                                            turgor_soil.water_content = (SRWC_target * turgor_soil.PARAMETERS.AWC) / 100
                                             turgor_soil.SRWC = SRWC_target
                                             turgor_soil.constant_water_content = True
                                         # Rehydration
@@ -1438,7 +1437,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=1156, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(2500, forced_start_time=490, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          # show_3Dplant=False, option_static=False, tillers_replications=None,

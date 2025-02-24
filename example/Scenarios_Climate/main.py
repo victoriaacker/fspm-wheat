@@ -239,7 +239,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     stop_drought_SRWC = stop_drought_SRWC  # SRWC at which the drought event stops (%)
     SRWC_target = 80.  # Target SRWC for rehydration
     rehydration = False # Ongoing rehydration period (bool)
-    rehydration_duration = 15.  # duration of the rehydration period (days)
+    rehydration_duration = 5.  # duration of the rehydration period (days)
 
     # -- OUTPUTS CONFIGURATION --
 
@@ -619,7 +619,6 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                             for t_turgorgrowth in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP,
                                                         TURGORGROWTH_TIMESTEP):
                                 if drought_trigger and (turgorgrowth_facade_.population.plants[0].axes[0].green_area >= drought_trigger or drought_ongoing) and not drought_passed:
-                                    print('tugor drought')
                                     drought_ongoing = True
                                     turgor_soil = turgorgrowth_facade_.soils[(1, 'MS')]
                                     turgor_soil.constant_water_content = False
@@ -1397,7 +1396,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=5, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(1500, forced_start_time=1176, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675},
          heterogeneous_canopy=True,

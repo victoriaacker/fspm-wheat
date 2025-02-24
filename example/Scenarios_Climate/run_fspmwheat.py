@@ -102,7 +102,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
         print(scenario_name)
         try:
             main.main(simulation_length=SIMULATION_LENGTH,
-                      run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS,
+                      run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS, run_from_outputs=False, forced_start_time=1176,
                       METEO_FILENAME=scenario_meteo,
                       N_fertilizations=N_FERTILIZATIONS,
                       PLANT_DENSITY={1: 250},
