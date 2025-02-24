@@ -1396,7 +1396,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(1500, forced_start_time=1176, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(2500, forced_start_time=1176, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675},
          heterogeneous_canopy=True,
