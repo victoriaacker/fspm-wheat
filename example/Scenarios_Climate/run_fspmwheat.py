@@ -93,6 +93,9 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
         if not os.path.exists(scenario_outputs_dirpath):
             os.mkdir(scenario_outputs_dirpath)
 
+        ADEL_SAVE = True
+        os.mkdir(os.path.join(scenario_outputs_dirpath, 'ADEL'))
+
         # Postprocessings
         scenario_postprocessing_dirpath = os.path.join(scenario_dirpath, 'postprocessing')
         if not os.path.exists(scenario_postprocessing_dirpath):
@@ -112,6 +115,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
                       POSTPROCESSING_DIRPATH=scenario_postprocessing_dirpath,
                       update_parameters_all_models=scenario_parameters,
                       tillers_replications=TILLERS,
+                      ADEL_SAVE=ADEL_SAVE,
                       drought_trigger=drought_trigger, stop_drought_SRWC=stop_drought_SRWC)
             # if GENERATE_GRAPHS:
             #     additional_graphs.graph_summary(scenario_id, scenario_graphs_dirpath,

@@ -81,7 +81,7 @@ def rehydration_schedule(water_content_mini, SRWC_target, AWC, rehydration_durat
 
 
 def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessing=True, generate_graphs=True,
-         run_from_outputs=False, stored_times=None,
+         run_from_outputs=False, stored_times=None, ADEL_SAVE=False,
          option_static=False, show_3Dplant=False, tillers_replications=True, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
          INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
@@ -659,8 +659,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                 #     pass
 
                                 # Adel 3D plant save
-                                # adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
-                                adel_wheat.scene(g).save(r'adel_save\t{}.bgeom'.format(t_turgorgrowth))
+                                if ADEL_SAVE and t_turgorgrowth%24 == 0:
+                                    # adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
+                                    adel_wheat.scene(g).save(os.path.join(OUTPUTS_DIRPATH, 'ADEL', 't{}.bgeom'.format(t_turgorgrowth)))
 
                                 for t_growthwheat in range(t_turgorgrowth, t_turgorgrowth + TURGORGROWTH_TIMESTEP,
                                                            GROWTHWHEAT_TIMESTEP):
@@ -1397,7 +1398,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 if __name__ == '__main__':
     main(2500, forced_start_time=1176, run_simu=True, run_postprocessing=True, generate_graphs=True,
-         run_from_outputs=False,
+         run_from_outputs=False, ADEL_SAVE=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675},
          heterogeneous_canopy=True,
          N_fertilizations={2016: 357143, 2520: 1000000},
