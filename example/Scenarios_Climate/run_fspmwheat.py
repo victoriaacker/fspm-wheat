@@ -38,6 +38,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
 
     # Do run the simulation?
     RUN_SIMU = scenario_parameters.get('Run_Simulation', True)
+    # RUN_SIMU = False
 
     SIMULATION_LENGTH = scenario_parameters.get('Simulation_Length', 3000)
 
@@ -94,7 +95,8 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
             os.mkdir(scenario_outputs_dirpath)
 
         ADEL_SAVE = True
-        os.mkdir(os.path.join(scenario_outputs_dirpath, 'ADEL'))
+        if not os.path.exists(os.path.join(scenario_outputs_dirpath, 'ADEL')):
+            os.mkdir(os.path.join(scenario_outputs_dirpath, 'ADEL'))
 
         # Postprocessings
         scenario_postprocessing_dirpath = os.path.join(scenario_dirpath, 'postprocessing')
@@ -138,7 +140,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
 
 
 if __name__ == '__main__':
-    scenario = 3
+    scenario = 1
     inputs = 'inputs'
     outputs = 'outputs'
 

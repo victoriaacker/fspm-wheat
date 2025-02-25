@@ -91,9 +91,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
          # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
          # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
-         # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
+         OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
          # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
-         OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
+         # OUTPUTS_DIRPATH='outputs_12T', POSTPROCESSING_DIRPATH='postprocessing_12T', GRAPHS_DIRPATH='graphs_12T',
          GRAPHS_COMPARISON_DIRPATH='graphs_comparison', SCREENSHOT_DIRPATH='adel_save'):
     """
     Run a simulation of fspmwheat with coupling to several models
