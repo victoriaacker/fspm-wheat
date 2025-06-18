@@ -181,7 +181,6 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
     # Name of the CSV files which contain the Tr, green_area and SRWC forcings
     METEO_FORCINGS_FILENAME = 'meteo_Ljutovac2002.csv'
-    METEO_SIMPLE_FORCINGS_FILENAME = 'meteo_simple.csv'
 
     # Name of the CSV files which describes the forcings values of hiddenzone
     # Sucrose, amino acids and proteins for osmotic water potential calculation
@@ -248,9 +247,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
     # Name of the CSV files which contains the meteo data
     meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), index_col='t', sep=',')
-    # meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_SIMPLE_FORCINGS_FILENAME), index_col='t', sep=',')
 
-    # drought_trigger = 0.00267  # plant green area at which the drought treatment starts (m2)
     drought_trigger = 10  # plant green area at which the drought treatment starts (m2)
     drought_ongoing = False  # Is the drought event ongoing (bool)
     drought_passed = False  # Has the drought event occured (bool)
@@ -288,11 +285,16 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     # -- POSTPROCESSING CONFIGURATION --
 
     # Name of the CSV files which will contain the postprocessing of the model
-    AXES_POSTPROCESSING_FILENAME = 'axes_postprocessing.csv'
-    ORGANS_POSTPROCESSING_FILENAME = 'organs_postprocessing.csv'
-    HIDDENZONES_POSTPROCESSING_FILENAME = 'hiddenzones_postprocessing.csv'
-    ELEMENTS_POSTPROCESSING_FILENAME = 'elements_postprocessing.csv'
-    SOILS_POSTPROCESSING_FILENAME = 'soils_postprocessing.csv'
+    AXES_POSTPROCESSING_FILENAME_cnwheat = 'axes_postprocessing_cnwheat.csv'
+    ORGANS_POSTPROCESSING_FILENAME_cnwheat = 'organs_postprocessing_cnwheat.csv'
+    HIDDENZONES_POSTPROCESSING_FILENAME_cnwheat = 'hiddenzones_postprocessing_cnwheat.csv'
+    ELEMENTS_POSTPROCESSING_FILENAME_cnwheat = 'elements_postprocessing_cnwheat.csv'
+    SOILS_POSTPROCESSING_FILENAME_cnwheat = 'soils_postprocessing_cnwheat.csv'
+    AXES_POSTPROCESSING_FILENAME_turgor = 'axes_postprocessing_turgor.csv'
+    ORGANS_POSTPROCESSING_FILENAME_turgor = 'organs_postprocessing_turgor.csv'
+    HIDDENZONES_POSTPROCESSING_FILENAME_turgor = 'hiddenzones_postprocessing_turgor.csv'
+    ELEMENTS_POSTPROCESSING_FILENAME_turgor = 'elements_postprocessing_turgor.csv'
+    SOILS_POSTPROCESSING_FILENAME_turgor = 'soils_postprocessing_turgor.csv'
 
     # -- ADEL and MTG CONFIGURATION --
 
@@ -798,7 +800,6 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                 # Assert states_filepaths were not opened during simulation run meaning that other filenames were saved
                 tmp_filename = 'ACTUAL_{}.csv'.format(outputs_file_basename)
                 tmp_path = os.path.join(OUTPUTS_DIRPATH, tmp_filename)
-                # TODO - Victoria 10.21
                 # assert not os.path.isfile(tmp_path), \
                 #     "File {} was saved because {} was opened during simulation run. Rename it before running postprocessing".format(
                 #         tmp_filename, outputs_file_basename)
@@ -808,21 +809,6 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
         else:
             delta_t = CNWHEAT_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR
-
-        # run the postprocessing
-        # Separation between posprocessing of CN-Wheat and TurgorGrowth
-
-        AXES_POSTPROCESSING_FILENAME_cnwheat = 'axes_postprocessing_cnwheat.csv'
-        ORGANS_POSTPROCESSING_FILENAME_cnwheat = 'organs_postprocessing_cnwheat.csv'
-        HIDDENZONES_POSTPROCESSING_FILENAME_cnwheat = 'hiddenzones_postprocessing_cnwheat.csv'
-        ELEMENTS_POSTPROCESSING_FILENAME_cnwheat = 'elements_postprocessing_cnwheat.csv'
-        SOILS_POSTPROCESSING_FILENAME_cnwheat = 'soils_postprocessing_cnwheat.csv'
-
-        AXES_POSTPROCESSING_FILENAME_turgor = 'axes_postprocessing_turgor.csv'
-        ORGANS_POSTPROCESSING_FILENAME_turgor = 'organs_postprocessing_turgor.csv'
-        HIDDENZONES_POSTPROCESSING_FILENAME_turgor = 'hiddenzones_postprocessing_turgor.csv'
-        ELEMENTS_POSTPROCESSING_FILENAME_turgor = 'elements_postprocessing_turgor.csv'
-        SOILS_POSTPROCESSING_FILENAME_turgor = 'soils_postprocessing_turgor.csv'
 
         # run the postprocessing
         axes_postprocessing_file_basename_cnwheat = AXES_POSTPROCESSING_FILENAME_cnwheat.split('.')[0]
@@ -971,7 +957,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         colors = ['blue', 'darkorange', 'green', 'red', 'darkviolet', 'gold', 'magenta', 'brown', 'darkcyan', 'grey', 'lime']
         colors = colors + colors
 
-        # 10) Meteo : CO2
+        # 1) Meteo : CO2
         meteo = pd.read_csv(os.path.join(INPUTS_DIRPATH, METEO_FORCINGS_FILENAME), sep=',')
         fig, ax = plt.subplots()
         ax.plot(meteo['t'], meteo['ambient_CO2'])
@@ -981,7 +967,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'CO2' + '.PNG'))
         plt.close()
 
-        # 9) Osmotic adjustement
+        # 2) Osmotic adjustement
 
         df_hz = postprocessing_df_dict_turgor[hiddenzones_postprocessing_file_basename_turgor]
         df_hz = df_hz[df_hz['axis'] == 'MS']
@@ -1004,7 +990,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'osmotic_adjustment_age' + '.PNG'))
         plt.close()
 
-        # 8) Stomatal conductance models : gsw (Ball), gs_CO2 (Tuzet), gs_w (Wolf)
+        # 3) Stomatal conductance models : gsw (Ball), gs_CO2 (Tuzet), gs_w (Wolf)
         df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.axis == 'MS']
         df_elt_outputs['N_content_total'] = df_elt_outputs['N_content_total'] * 100
@@ -1028,7 +1014,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                                   plot_filepath=os.path.join(GRAPHS_DIRPATH, graph_name),
                                                   explicit_label=False)
 
-        # 0) Phyllochron
+        # 4) Phyllochron
         df_SAM = df_SAM[df_SAM['axis'] == 'MS']
         df_hz = postprocessing_df_dict_cnwheat[hiddenzones_postprocessing_file_basename_cnwheat]
         grouped_df = df_hz[df_hz['axis'] == 'MS'].groupby(['plant', 'metamer'])[['t', 'leaf_is_emerged']]
@@ -1072,7 +1058,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             plt.savefig(os.path.join(GRAPHS_DIRPATH, 'phyllochron' + '.PNG'))
             plt.close()
 
-        # 1) Comparison Dimensions with Ljutovac 2002
+        # 5) Comparison Dimensions with Ljutovac 2002
         data_obs = pd.read_csv(r'inputs\Ljutovac2002.csv')
         bchmk = data_obs
         res = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
@@ -1119,9 +1105,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         plt.savefig(os.path.join(GRAPHS_DIRPATH, var + '.PNG'))
         plt.close()
 
-        #: Save
-        # 1bis) Comparison Structural Masses vs. adaptation from Bertheloot 2008
-
+        # 6) Comparison Structural Masses vs. adaptation from Bertheloot 2008
         # SSLW Laminae
         bchmk = pd.DataFrame.from_dict({1: 15, 2: 23, 3: 25, 4: 18, 5: 22, 6: 25, 7: 20, 8: 23, 9: 26, 10: 28, 11: 31}, orient='index').rename(columns={0: 'SSLW'})
         bchmk.index.name = 'metamer'
@@ -1164,7 +1148,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'LSSW.PNG'))
         plt.close()
 
-        # 2) LAI
+        # 7) LAI
         df_elt['green_area_rep'] = df_elt.green_area * df_elt.nb_replications
         grouped_df = df_elt[(df_elt.axis == 'MS') & (df_elt.element == 'LeafElement1')].groupby(['t', 'plant'])
         LAI_dict = {'t': [], 'plant': [], 'LAI': []}
@@ -1174,19 +1158,14 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
             LAI_dict['plant'].append(plant)
             LAI_dict['LAI'].append(data['green_area_rep'].sum() * PLANT_DENSITY[plant])
 
-        # LAI_df = pd.DataFrame(LAI_dict)
-        # LAI_df.to_csv(os.path.join(OUTPUTS_DIRPATH, 'LAI.csv'))
-
         cnwheat_tools.plot_cnwheat_ouputs(pd.DataFrame(LAI_dict), 't', 'LAI', x_label='Time (Hour)', y_label='LAI',
                                           plot_filepath=os.path.join(GRAPHS_DIRPATH, 'LAI.PNG'), explicit_label=False)
 
-        # 3) RER during the exponentiel-like phase
-
+        # 8) RER during the exponentiel-like phase
         # - RER parameters
         rer_param = dict((k, v) for k, v in elongwheat_parameters.RERmax.items())
 
         # - Simulated RER
-
         # import simulation outputs
         data_RER = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, HIDDENZONES_OUTPUTS_FILENAME))
         data_RER = data_RER[(data_RER.axis == 'MS') & (data_RER.metamer >= 4)].copy()
@@ -1282,7 +1261,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         ax.set_title('C allocation to roots')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_allocation.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
-        # 5) C usages relatif to Net Photosynthesis
+        # 9) C usages relatif to Net Photosynthesis
         df_org = postprocessing_df_dict_cnwheat[organs_postprocessing_file_basename_cnwheat]
         df_roots = df_org[df_org['organ'] == 'roots'].copy()
         df_roots['day'] = df_roots['t'] // 24 + 1
@@ -1345,7 +1324,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                        C_usages.Respi_roots + C_usages.Respi_shoot + C_usages.exudation + C_usages.Structure_roots + C_usages.Structure_shoot + C_usages.NS_phloem + C_usages.NS_other) / \
                                C_usages.C_produced
 
-        # ----- Graph
+        # Graphs
         fig, ax = plt.subplots()
         ax.plot(C_usages.t, C_usages.Structure_shoot / C_usages.C_produced * 100,
                 label=u'Structural mass - Shoot', color='g')
@@ -1368,7 +1347,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'C_usages_cumulated.PNG'), format='PNG', bbox_inches='tight')
         plt.close()
 
-        # 6) RUE
+        # 10) RUE
         df_elt['PARa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt[
             'nb_replications'] * 3600 / 4.6 * 10 ** -6  # Il faudrait idealement utiliser les calculcs green_area et PARa des talles
         df_elt['RGa_MJ'] = df_elt['PARa'] * df_elt['green_area'] * df_elt[
@@ -1403,7 +1382,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         ax.set_title('RUE investigations')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'RUE2.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
-        # 7) Sum thermal time
+        # 11) Sum thermal time
         df_SAM = df_SAM[df_SAM['axis'] == 'MS']
         fig, ax = plt.subplots()
         ax.plot(df_SAM['t'], df_SAM['sum_TT'])
@@ -1412,7 +1391,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
         ax.set_title('Thermal Time')
         plt.savefig(os.path.join(GRAPHS_DIRPATH, 'SumTT.PNG'), dpi=200, format='PNG', bbox_inches='tight')
 
-        # 7) Residual N : ratio_N_mstruct_max
+        # 12) Residual N : ratio_N_mstruct_max
         df_elt_outputs = pd.read_csv(os.path.join(OUTPUTS_DIRPATH, ELEMENTS_OUTPUTS_FILENAME))
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.axis == 'MS']
         df_elt_outputs = df_elt_outputs.loc[df_elt_outputs.mstruct != 0]
@@ -1436,7 +1415,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=490, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(2500, forced_start_time=2, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          # show_3Dplant=False, option_static=False, tillers_replications=None,
@@ -1445,4 +1424,3 @@ if __name__ == '__main__':
          # N_fertilizations={'constant_Conc_Nitrates': 328000},
          # heterogeneous_canopy=True, N_fertilizations={2016: 0, 2520: 0}, #Test N plus élevé initialement, sans fertilization
          PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_Ljutovac2002.csv')
-    # PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_simple.csv')

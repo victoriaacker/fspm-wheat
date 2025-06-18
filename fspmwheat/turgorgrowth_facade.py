@@ -254,16 +254,9 @@ class TurgorGrowthFacade(object):
                             missing_initial_hiddenzone_properties = turgorgrowth_hiddenzone_data_names - set(mtg_hiddenzone_properties)
                             turgorgrowth_hiddenzone_data_names -= missing_initial_hiddenzone_properties
 
-                        # if mtg_hiddenzone_properties.get('leaf_pseudo_age') is not None: # Growing leaf in second phase of elongation
                         # UPDATE VICTORIA 01.25
                         # if mtg_hiddenzone_properties.get('leaf_pseudo_age') >= 0: # Growing leaf in second phase of elongation
                         #     mtg_hiddenzone_properties['leaf_Wmax'] = mtg_hiddenzone_properties['width']
-
-                        # # TEST 06.24 - Update lamina_Lmax and leaf_Wmax in turgor-growth
-                        # turgorgrowth_hiddenzone_inputs_dict = {}
-                        # for hiddenzone_input_name in turgorgrowth_simulation.Simulation.HIDDENZONE_STATE:
-                        #     if hiddenzone_input_name in turgorgrowth_hiddenzone_data_from_mtg_organs_data:
-                        #         turgorgrowth_hiddenzone_inputs_dict[hiddenzone_input_name] = turgorgrowth_hiddenzone_data_from_mtg_organs_data[hiddenzone_input_name]
 
                         if set(mtg_hiddenzone_properties).issuperset(turgorgrowth_hiddenzone_data_names):
                             turgorgrowth_hiddenzone_data_dict = {}
@@ -321,7 +314,7 @@ class TurgorGrowthFacade(object):
                                 # add element to organ
                                 setattr(turgorgrowth_organ, turgorgrowth_converter.DATAFRAME_TO_TURGORGROWTH_ELEMENTS_NAMES_MAPPING[mtg_element_label], turgorgrowth_element)
 
-                            #: TEST 06.24 - Update lamina_Lmax & Wmax in turgor-growth
+                            #: Update lamina_Lmax & Wmax
                             if mtg_organ_label == 'blade':
                                 if has_valid_hiddenzone is True:
                                     mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
@@ -383,13 +376,11 @@ class TurgorGrowthFacade(object):
                     if self._shared_mtg.label(mtg_axis_vid) == turgorgrowth_axis_label:
                         break
 
-                # : __________________________________________________________________________________________________________________________
-                # XYLEM
+                # Xylem
                 turgorgrowth_axis_property_names = [property_name for property_name in turgorgrowth_simulation.Simulation.AXES_RUN_VARIABLES if hasattr(turgorgrowth_axis, property_name)]
                 for turgorgrowth_axis_property_name in turgorgrowth_axis_property_names:
                     turgorgrowth_axis_property_value = getattr(turgorgrowth_axis, turgorgrowth_axis_property_name)
                     self._shared_mtg.property(turgorgrowth_axis_property_name)[mtg_axis_vid] = turgorgrowth_axis_property_value
-
                 for mtg_organ_label in MTG_TO_TURGORGROWTH_AXES_ORGANS_MAPPING.keys():
                     if mtg_organ_label not in self._shared_mtg.get_vertex_property(mtg_axis_vid):
                         # Add a property describing the organ to the current axis of the MTG
@@ -401,7 +392,6 @@ class TurgorGrowthFacade(object):
                         if hasattr(turgorgrowth_organ, turgorgrowth_property_name):
                             mtg_organ_properties[turgorgrowth_property_name] = getattr(turgorgrowth_organ, turgorgrowth_property_name)
                 mtg_metamers_iterator = self._shared_mtg.components_iter(mtg_axis_vid)
-                # : __________________________________________________________________________________________________________________________
 
                 for turgorgrowth_phytomer in turgorgrowth_axis.phytomers:
                     turgorgrowth_phytomer_index = turgorgrowth_phytomer.index
@@ -425,21 +415,12 @@ class TurgorGrowthFacade(object):
                         if mtg_organ_label not in MTG_TO_TURGORGROWTH_PHYTOMERS_ORGANS_MAPPING:
                             continue
                         turgorgrowth_organ = getattr(turgorgrowth_phytomer, TURGORGROWTH_ATTRIBUTES_MAPPING[MTG_TO_TURGORGROWTH_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]])
-                        mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
 
-                        # mtg_organ_properties.update(turgorgrowth_organ.__dict__)
                         if turgorgrowth_organ is None:
                             continue
                         # element scale
                         for mtg_element_vid in self._shared_mtg.components_iter(mtg_organ_vid):
                             mtg_element_label = self._shared_mtg.label(mtg_element_vid)
-
-                            #: Update 07.2024 Victoria : for sheath and internode
-                            # #: No senescent organs into MTG
-                            # if (self._shared_mtg.get_vertex_property(mtg_element_vid).get('is_over', True)):
-                            #     turgorgrowth_element_property_names = [property_name for property_name in turgorgrowth_simulation.Simulation.ELEMENTS_RUN_VARIABLES]
-                            #     for turgorgrowth_element_property_name in turgorgrowth_element_property_names:
-                            #         self._shared_mtg.property(turgorgrowth_element_property_name)[mtg_element_vid] = 0
 
                             if mtg_element_label not in turgorgrowth_converter.DATAFRAME_TO_TURGORGROWTH_ELEMENTS_NAMES_MAPPING: continue
 
@@ -448,7 +429,6 @@ class TurgorGrowthFacade(object):
                             for turgorgrowth_element_property_name in turgorgrowth_element_property_names:
                                 turgorgrowth_element_property_value = getattr(turgorgrowth_element, turgorgrowth_element_property_name)
                                 self._shared_mtg.property(turgorgrowth_element_property_name)[mtg_element_vid] = turgorgrowth_element_property_value
-                            mtg_element_properties = self._shared_mtg.get_vertex_property(mtg_element_vid)
 
                         # update of organ scale from elements
                         new_mtg_element_labels = {}
@@ -461,26 +441,16 @@ class TurgorGrowthFacade(object):
                             leaf_element_mtg_properties = self._shared_mtg.get_vertex_property(new_mtg_element_labels['LeafElement1'])
                             organ_visible_length = leaf_element_mtg_properties['length']
                             self._shared_mtg.property('visible_length')[mtg_organ_vid] = organ_visible_length
-
-                            #: TEST 06.24 - Update lamina_Lmax & Wmax in turgor-growth
+                            #: Lamina_Lmax & Wmax in turgor-growth
                             if leaf_element_mtg_properties['is_growing'] is True:
-                                mtg_organ_properties = self._shared_mtg.get_vertex_property(mtg_organ_vid)
                                 if leaf_element_mtg_properties['length'] >= mtg_hiddenzone_properties['lamina_Lmax']:
-                                    # mtg_hiddenzone_properties['lamina_Lmax'] = leaf_element_mtg_properties['length']
                                     self._shared_mtg.property('lamina_Lmax')[mtg_metamer_vid] = leaf_element_mtg_properties['length']
-                                # leaf_element_mtg_properties['Wmax'] = mtg_hiddenzone_properties['leaf_Wmax']
                                 self._shared_mtg.property('Wmax')[new_mtg_element_labels['LeafElement1']] = mtg_hiddenzone_properties['leaf_Wmax']
-                                # mtg_organ_properties['shape_max_width'] = mtg_hiddenzone_properties['leaf_Wmax']
-                                # mtg_organ_properties['shape_mature_length'] = mtg_hiddenzone_properties['lamina_Lmax']
                                 self._shared_mtg.property('shape_mature_length')[mtg_organ_vid] = mtg_hiddenzone_properties['lamina_Lmax']
                                 self._shared_mtg.property('shape_max_width')[mtg_organ_vid] = mtg_hiddenzone_properties['leaf_Wmax']
                             else:
                                 self._shared_mtg.property('shape_mature_length')[mtg_organ_vid] = leaf_element_mtg_properties['length']
                                 self._shared_mtg.property('shape_max_width')[mtg_organ_vid] = leaf_element_mtg_properties['Wmax']
-
-                                # mtg_hiddenzone_properties.update(turgorgrowth_phytomer.hiddenzone.__dict__)
-                                # mtg_organ_properties.update(turgorgrowth_organ.__dict__)
-                                # leaf_element_mtg_properties.update(turgorgrowth_element.__dict__)
 
                         elif mtg_organ_label == 'sheath' and 'StemElement' in new_mtg_element_labels.keys():
                             organ_visible_length = self._shared_mtg.property('length')[new_mtg_element_labels['StemElement']]
@@ -491,7 +461,7 @@ class TurgorGrowthFacade(object):
                         else:
                             organ_visible_length = 0
 
-                        #: Update 07.2024 Victoria - internode length
+                        #: Internode length
                         if 'HiddenElement' in new_mtg_element_labels.keys():
                             organ_hidden_length = self._shared_mtg.property('length')[new_mtg_element_labels['HiddenElement']]
                         else:
@@ -514,8 +484,7 @@ class TurgorGrowthFacade(object):
 
     def _update_shared_dataframes(self, turgorgrowth_axes_data_df=None, turgorgrowth_organs_data_df=None,
                                   turgorgrowth_hiddenzones_data_df=None, turgorgrowth_elements_data_df=None,
-                                  turgorgrowth_soils_data_df=None,
-                                  cnwheat_soils_data_df=None):
+                                  turgorgrowth_soils_data_df=None):
         """
         Update the dataframes shared between all models from the inputs dataframes or the outputs dataframes of the cnwheat model.
 

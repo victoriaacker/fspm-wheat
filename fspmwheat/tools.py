@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from alinea.adel.mtg import to_plantgl
 from openalea.plantgl.all import Viewer, Vector3
 
+
 """
     fspmwheat.tools
     ~~~~~~~~~~~~~~~
@@ -188,18 +189,18 @@ def color_MTG_Nitrogen(g, df, t, SCREENSHOT_DIRPATH):
     Viewer.saveSnapshot(os.path.join(SCREENSHOT_DIRPATH, 'Day_{}.png'.format(t/24+1)))
 
 
-# TEST VICTORIA 09.2024 ------------------------------------------------------------------------------------------------
 def color_MTG_water(g, df, t, SCREENSHOT_DIRPATH):
     def color_map(psi):
         if -0.5 <= psi <= -0.1:     # Bleu clair TODO gradué
-            vid_colors = [173, 216, 230]
+            # vid_colors = [173, 216, 230]
+            vid_colors = [50, 50, int(255 + psi * 40)]
         elif -0.1 < psi <= 0:   # Bleu foncé TODO gradué
-            # vid_colors = [int(255 - psi * 51), int(255 - psi * 20), 50]
             # vid_colors = [int(255 + psi * 51), int(255 + psi * 20), 50]
-            vid_colors = [0, 0, 139]
+            # vid_colors = [0, 0, 139]
+            vid_colors = [50, 50, int(255 + psi * 10)]
         else:   # Rouge TODO gradué
-            vid_colors = [255, 0, 0]
-        # vid_colors = [int(255 - psi * 51), int(255 - psi * 20), 50]
+            # vid_colors = [255, 0, 0]
+            vid_colors = [50, 50, int(255 + psi * 10)]
         return vid_colors
 
     def calculate_Total_Water_Potential(osmotic_water_potential, turgor_water_potential):
@@ -235,7 +236,6 @@ def color_MTG_water(g, df, t, SCREENSHOT_DIRPATH):
     Viewer.add(s)
     # Viewer.camera.setPosition(Vector3(83.883, 12.3239, 93.4706))
     # Viewer.camera.lookAt(Vector3(0., 0, 50))
-    # Viewer.camera.setPosition(Vector3(0.3, 0.009, 0.05))
-    Viewer.camera.setPosition(Vector3(0.35, 0.001, 0.005))
-    Viewer.camera.lookAt(Vector3(0., 0, -50))
+    Viewer.camera.setPosition(Vector3(0.65, 0.005, 0.2))
+    Viewer.camera.lookAt(Vector3(-15., 0, -50))
     Viewer.saveSnapshot(os.path.join(SCREENSHOT_DIRPATH, 'Day_{}.png'.format(t / 24 + 1)))

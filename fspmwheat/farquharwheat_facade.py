@@ -152,8 +152,6 @@ class FarquharWheatFacade(object):
                                 #: Width is actually diameter for Internodes
                                 if mtg_organ_label in ['internode', 'pedoncule', 'ear'] and farquharwheat_element_input_name == 'width':
                                     mtg_element_input = mtg_element_properties.get('diameter', 0.0)
-                                # if mtg_organ_label in ['sheath'] and farquharwheat_element_input_name == 'width':
-                                #     mtg_element_input = mtg_element_properties.get('width', 0.0)
 
                                 farquharwheat_element_inputs_dict[farquharwheat_element_input_name] = mtg_element_input
 

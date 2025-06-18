@@ -38,7 +38,6 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
 
     # Do run the simulation?
     RUN_SIMU = scenario_parameters.get('Run_Simulation', True)
-    # RUN_SIMU = False
 
     SIMULATION_LENGTH = scenario_parameters.get('Simulation_Length', 3000)
 
@@ -47,6 +46,10 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
 
     # Do generate the graphs?
     GENERATE_GRAPHS = scenario_parameters.get('Generate_Graphs', False)  #: TODO separate postprocessings coming from other models
+
+    # Do run from outputs?
+    RUN_FROM_OUTPUTS = scenario_parameters.get('Run_From_Outputs', False)  #: TODO separate postprocessings coming from other models
+    FORCED_START_TIME = scenario_parameters.get('Forced_Start_Time', 0)
 
     # Inputs of the scenario
     scenario_meteo = scenario_parameters.get('METEO_FILENAME', 'meteo_CO2_400.csv')
@@ -107,7 +110,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
         print(scenario_name)
         try:
             main.main(simulation_length=SIMULATION_LENGTH,
-                      run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS, run_from_outputs=False, forced_start_time=1176,
+                      run_simu=RUN_SIMU, run_postprocessing=RUN_POSTPROCESSING, generate_graphs=GENERATE_GRAPHS, run_from_outputs=RUN_FROM_OUTPUTS, forced_start_time=FORCED_START_TIME,
                       METEO_FILENAME=scenario_meteo,
                       N_fertilizations=N_FERTILIZATIONS,
                       PLANT_DENSITY={1: 250},
@@ -140,7 +143,7 @@ def run_fspmwheat(scenario_id=1, inputs_dirpath='inputs', outputs_dir_path='outp
 
 
 if __name__ == '__main__':
-    scenario = 1
+    scenario = 3
     inputs = 'inputs'
     outputs = 'outputs'
 

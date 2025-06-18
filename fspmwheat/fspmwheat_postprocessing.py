@@ -475,7 +475,7 @@ def calculate_performance_indices(scenario_outputs_dirpath, scenario_postprocess
 
     res_df.to_csv(os.path.join(scenario_postprocessing_dirpath, 'performance_indices.csv'), index=False)
 
-# def all_scenraii_postprocessings(scenarios_list_dirpath):
+# def all_scenarii_postprocessings(scenarios_list_dirpath):
 #     # ------- Run the above functions for all the scenarios
 #     # Import scenarios list and description
 #     scenarios_df = pd.read_csv(scenarios_list_dirpath, index_col='Scenario')

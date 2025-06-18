@@ -240,6 +240,11 @@ class CNWheatFacade(object):
                         continue
                     cnwheat_plant.cohorts.append(tiller_rank + 3)
 
+                if mtg_axis_label == 'MS':
+                    #: Soil
+                    soil = self.soils[(mtg_plant_index, mtg_axis_label)]
+                    soil.SRWC = self._shared_mtg.get_vertex_property(mtg_axis_vid)['soil']['SRWC']
+
                 #: MS
                 # create a new axis
                 cnwheat_axis = cnwheat_model.Axis(mtg_axis_label)
