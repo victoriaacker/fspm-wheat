@@ -84,12 +84,11 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
          run_from_outputs=False, stored_times=None,
          option_static=False, show_3Dplant=True, tillers_replications=True, heterogeneous_canopy=True,
          N_fertilizations=None, PLANT_DENSITY=None, update_parameters_all_models=None,
-         INPUTS_DIRPATH='inputs_simpleplant', METEO_FILENAME='meteo_Ljutovac2002.csv',
-         # INPUTS_DIRPATH='inputs_temperature', METEO_FILENAME='meteo_Ljutovac2002.csv',
+         INPUTS_DIRPATH='inputs', METEO_FILENAME='meteo_Ljutovac2002.csv',
          # OUTPUTS_DIRPATH='outputs', POSTPROCESSING_DIRPATH='postprocessing', GRAPHS_DIRPATH='graphs',
          # OUTPUTS_DIRPATH='outputs2', POSTPROCESSING_DIRPATH='postprocessing2', GRAPHS_DIRPATH='graphs2',
-         OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
-         # OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
+         # OUTPUTS_DIRPATH='outputs3', POSTPROCESSING_DIRPATH='postprocessing3', GRAPHS_DIRPATH='graphs3',
+         OUTPUTS_DIRPATH='outputs_2020', POSTPROCESSING_DIRPATH='postprocessing_2020', GRAPHS_DIRPATH='graphs_2020',
          # OUTPUTS_DIRPATH='outputs_20T', POSTPROCESSING_DIRPATH='postprocessing_20T', GRAPHS_DIRPATH='graphs_20T',
          # OUTPUTS_DIRPATH='outputs_6T', POSTPROCESSING_DIRPATH='postprocessing_6T', GRAPHS_DIRPATH='graphs_6T',
          # OUTPUTS_DIRPATH='outputs_CO2', POSTPROCESSING_DIRPATH='postprocessing_CO2', GRAPHS_DIRPATH='graphs_CO2',
@@ -587,22 +586,10 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
                 caribu_facade_.run(run_caribu, energy=PARi, DOY=DOY, hourTU=hour, latitude=48.85, sun_sky_option='sky',
                                    heterogeneous_canopy=heterogeneous_canopy, plant_density=PLANT_DENSITY[1])
-                # try:
-                #     # print('CARIBU hz', (g.get_vertex_property(69)['leaf_Wmax']))
-                #     print('CARIBU ele', g.get_vertex_property(815)['is_growing'])
-                #     print('CARIBU or', g.get_vertex_property(60)['is_growing'])
-                # except:
-                #     pass
 
                 for t_senescwheat in range(t_caribu, t_caribu + SENESCWHEAT_TIMESTEP, SENESCWHEAT_TIMESTEP):
                     # run SenescWheat
                     senescwheat_facade_.run()
-                    # try:
-                    #     # print('SENESC hz', (g.get_vertex_property(69)['leaf_Wmax']))
-                    #     print('SENESC ele', g.get_vertex_property(815)['is_growing'])
-                    #     print('SENESC or', g.get_vertex_property(60)['is_growing'])
-                    # except:
-                    #     pass
 
                     # Test for dead plant # TODO: adapt in case of multiple plants
                     if not shared_elements_inputs_outputs_df.empty and \
@@ -627,35 +614,17 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
                         # run FarquharWheat
                         farquharwheat_facade_.run(Ta, ambient_CO2, RH, Ur)
-                        # try:
-                        #     # print('FARQUHAR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                        #     print('FARQUHAR ele', g.get_vertex_property(815)['is_growing'])
-                        #     print('FARQUHAR or', g.get_vertex_property(60)['is_growing'])
-                        # except:
-                        #     pass
 
                         for t_elongwheat in range(t_farquharwheat, t_farquharwheat + FARQUHARWHEAT_TIMESTEP,
                                                   ELONGWHEAT_TIMESTEP):
                             # run ElongWheat
                             Tair, Tsoil = meteo.loc[t_elongwheat, ['air_temperature', 'soil_temperature']]
                             elongwheat_facade_.run(Tair, Tsoil, option_static=option_static)
-                            # try:
-                            #     # print('ELONG hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                            #     print('ELONG ele', g.get_vertex_property(815)['is_growing'])
-                            #     print('ELONG or', g.get_vertex_property(60)['is_growing'])
-                            # except:
-                            #     pass
 
                             # Update geometry
                             adel_wheat.update_geometry(g)
                             if show_3Dplant:
                                 adel_wheat.plot(g)
-                            # try:
-                            #     # print('ADEL hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                            #     print('ADEL ele', g.get_vertex_property(815)['is_growing'])
-                            #     print('ADEL or', g.get_vertex_property(60)['is_growing'])
-                            # except:
-                            #     pass
 
                             for t_turgorgrowth in range(t_elongwheat, t_elongwheat + ELONGWHEAT_TIMESTEP,
                                                         TURGORGROWTH_TIMESTEP):
@@ -682,39 +651,17 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                             turgor_soil.water_content += hourly_rehydration
 
                                 turgorgrowth_facade_.run()
-                                # try:
-                                #     # print('TURGOR hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                                #     print('TURGOR ele', g.get_vertex_property(815)['is_growing'])
-                                #     print('TURGOR or', g.get_vertex_property(60)['is_growing'])
-                                # except:
-                                #     pass
 
                                 # Update geometry
                                 adel_wheat.update_geometry(g)
                                 if show_3Dplant:
                                     adel_wheat.plot(g)
-                                # try:
-                                #     # print('ADEL hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                                #     print('ADEL ele', g.get_vertex_property(815)['is_growing'])
-                                #     print('ADEL or', g.get_vertex_property(60)['is_growing'])
-                                # except:
-                                #     pass
-
-                                # Adel 3D plant save
-                                # adel_wheat.save(g, basename=r'adel_save\t{}'.format(t_turgorgrowth))
                                 adel_wheat.scene(g).save(r'adel_save\t{}.bgeom'.format(t_turgorgrowth))
 
                                 for t_growthwheat in range(t_turgorgrowth, t_turgorgrowth + TURGORGROWTH_TIMESTEP,
                                                            GROWTHWHEAT_TIMESTEP):
                                     # run GrowthWheat
                                     growthwheat_facade_.run()
-                                    # try:
-                                    #     # print('GROWTH hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                                    #     print('GROWTH ele', g.get_vertex_property(815)['is_growing'])
-                                    #     print('GROWTH or', g.get_vertex_property(60)['is_growing'])
-                                    # except:
-                                    #     pass
-
                                     for t_cnwheat in range(t_growthwheat, t_growthwheat + GROWTHWHEAT_TIMESTEP,
                                                            CNWHEAT_TIMESTEP):
                                         print('t cnwheat is {}'.format(t_cnwheat))
@@ -729,17 +676,9 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
                                             Tair = meteo.loc[t_elongwheat, 'air_temperature']
                                             Tsoil = meteo.loc[t_elongwheat, 'soil_temperature']
                                             cnwheat_facade_.run(Tair, Tsoil, tillers_replications)
-                                        # try:
-                                        #     # print('CN hz', (g.get_vertex_property(69)['hiddenzone']['leaf_Wmax']))
-                                        #     print('CN ele', g.get_vertex_property(815)['is_growing'])
-                                        #     print('CN or', g.get_vertex_property(60)['is_growing'])
-                                        # except:
-                                        #     pass
-
                                         # append outputs at current step to global lists
                                         if (stored_times == 'all') or (t_cnwheat in stored_times):
                                             axes_outputs, elements_outputs, hiddenzones_outputs, organs_outputs, soils_outputs = fspmwheat_facade_.build_outputs_df_from_MTG()
-
                                             all_simulation_steps.append(t_cnwheat)
                                             axes_all_data_list.append(axes_outputs)
                                             organs_all_data_list.append(organs_outputs)
@@ -1415,7 +1354,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
 
 if __name__ == '__main__':
-    main(2500, forced_start_time=2, run_simu=True, run_postprocessing=True, generate_graphs=True,
+    main(10, forced_start_time=2, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False,
          show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.5, 'T2': 0.5, 'T3': 0.5, 'T4': 0.5},
          # show_3Dplant=False, option_static=False, tillers_replications=None,
