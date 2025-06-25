@@ -254,10 +254,6 @@ class TurgorGrowthFacade(object):
                             missing_initial_hiddenzone_properties = turgorgrowth_hiddenzone_data_names - set(mtg_hiddenzone_properties)
                             turgorgrowth_hiddenzone_data_names -= missing_initial_hiddenzone_properties
 
-                        # UPDATE VICTORIA 01.25
-                        # if mtg_hiddenzone_properties.get('leaf_pseudo_age') >= 0: # Growing leaf in second phase of elongation
-                        #     mtg_hiddenzone_properties['leaf_Wmax'] = mtg_hiddenzone_properties['width']
-
                         if set(mtg_hiddenzone_properties).issuperset(turgorgrowth_hiddenzone_data_names):
                             turgorgrowth_hiddenzone_data_dict = {}
                             for turgorgrowth_hiddenzone_data_name in turgorgrowth_hiddenzone_data_names:
