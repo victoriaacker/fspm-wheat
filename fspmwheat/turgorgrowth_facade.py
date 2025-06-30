@@ -64,7 +64,7 @@ class TurgorGrowthFacade(object):
 
     """
 
-    def __init__(self, shared_mtg, delta_t,
+    def __init__(self, shared_mtg, delta_t, update_parameters,
                  model_axes_inputs_df,
                  model_hiddenzones_inputs_df,
                  model_elements_inputs_df,
@@ -79,6 +79,7 @@ class TurgorGrowthFacade(object):
         """
                 :param openalea.mtg.mtg.MTG shared_mtg: The MTG shared between all models.
                 :param int delta_t: The delta between two runs, in seconds.
+                :param dict update_parameters: A dictionary with the parameters to update, should have the form {'Organ_label1': {'param1': value1, 'param2': value2}, ...}.
                 :param pandas.DataFrame model_hiddenzones_inputs_df: the inputs of the model at hiddenzones scale.
                 :param pandas.DataFrame model_elements_inputs_df: the inputs of the model at elements scale.
                 :param pandas.DataFrame model_organs_inputs_df: the inputs of the model at organ scale.
@@ -95,6 +96,8 @@ class TurgorGrowthFacade(object):
         self._simulation = turgorgrowth_simulation.Simulation(delta_t=delta_t)
 
         self.population, self.soils = turgorgrowth_converter.from_dataframes(model_axes_inputs_df, model_hiddenzones_inputs_df, model_elements_inputs_df, model_organs_inputs_df, model_soils_inputs_df)
+
+        self._update_parameters = update_parameters
 
         self._simulation.initialize(self.population, self.soils)
 
@@ -224,8 +227,8 @@ class TurgorGrowthFacade(object):
                             turgorgrowth_organ.__dict__.update(turgorgrowth_organ_data_dict)
 
                             # Update parameters if specified
-                            # if mtg_organ_label in self._update_parameters:
-                            #     turgorgrowth_organ.PARAMETERS.__dict__.update(self._update_parameters[mtg_organ_label])
+                            if mtg_organ_label in self._update_parameters:
+                                turgorgrowth_organ.PARAMETERS.__dict__.update(self._update_parameters[mtg_organ_label])
 
                             turgorgrowth_organ.initialize()
                             # add the new organ to current axis
@@ -260,6 +263,12 @@ class TurgorGrowthFacade(object):
                                 mtg_hiddenzone_data_value = mtg_hiddenzone_properties.get(turgorgrowth_hiddenzone_data_name)
                                 turgorgrowth_hiddenzone_data_dict[turgorgrowth_hiddenzone_data_name] = mtg_hiddenzone_data_value
                             turgorgrowth_hiddenzone.__dict__.update(turgorgrowth_hiddenzone_data_dict)
+
+                        # Update parameters if specified
+                        if mtg_hiddenzone_label in self._update_parameters:
+                            turgorgrowth_hiddenzone.PARAMETERS.__dict__.update(self._update_parameters[mtg_hiddenzone_label])
+
+                        turgorgrowth_hiddenzone.initialize()
                         # add the new hiddenzone to current phytomer
                         setattr(turgorgrowth_phytomer, mtg_hiddenzone_label, turgorgrowth_hiddenzone)
 
@@ -277,9 +286,9 @@ class TurgorGrowthFacade(object):
                         turgorgrowth_organ_class = MTG_TO_TURGORGROWTH_PHYTOMERS_ORGANS_MAPPING[mtg_organ_label]
                         turgorgrowth_organ = turgorgrowth_organ_class(mtg_organ_label)
 
-                        # # Update parameters if specified
-                        # if 'PhotosyntheticOrgan' in self._update_parameters:
-                        #     turgorgrowth_organ.PARAMETERS.__dict__.update(self._update_parameters['PhotosyntheticOrgan'])
+                        # Update parameters if specified
+                        if 'PhotosyntheticOrgan' in self._update_parameters:
+                            turgorgrowth_organ.PARAMETERS.__dict__.update(self._update_parameters['PhotosyntheticOrgan'])
 
                         turgorgrowth_organ.initialize()
                         has_valid_element = False

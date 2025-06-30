@@ -280,11 +280,11 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 
     # read adelwheat inputs at t0
     adel_wheat = AdelDyn(seed=1, scene_unit='m', leaves=echap_leaves(xy_model='Soissons_byleafclass'))
-    g = adel_wheat.load(dir=INPUTS_DIRPATH)
+    g = adel_wheat.load(directory=INPUTS_DIRPATH)
 
     axeT_df = pd.read_csv(os.path.join(INPUTS_DIRPATH,'axeTable.csv'))
     # Final leaf number
-    nff =50
+    nff = 50
     if update_parameters_all_models and 'elongwheat' in update_parameters_all_models:
         nff = update_parameters_all_models['elongwheat'].get('max_nb_leaves', nff)
     axeT_df.HS_final = nff
@@ -379,6 +379,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
     # Facade initialisation
     turgorgrowth_facade_ = turgorgrowth_facade.TurgorGrowthFacade(g,
                                                                   TURGORGROWTH_TIMESTEP * HOUR_TO_SECOND_CONVERSION_FACTOR,
+                                                                  update_parameters_turgorgrowth,
                                                                   turgorgrowth_axes_initial_state,
                                                                   turgorgrowth_hiddenzones_initial_state,
                                                                   turgorgrowth_elements_initial_state,
@@ -1399,7 +1400,7 @@ def main(simulation_length, forced_start_time=0, run_simu=True, run_postprocessi
 if __name__ == '__main__':
     main(2500, forced_start_time=400, run_simu=True, run_postprocessing=True, generate_graphs=True,
          run_from_outputs=False, ADEL_SAVE=False,
-         show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4':0.675},
+         show_3Dplant=False, option_static=False, tillers_replications={'T1': 0.675, 'T2': 0.675, 'T3': 0.675, 'T4': 0.675},
          heterogeneous_canopy=True,
          N_fertilizations={2016: 357143, 2520: 1000000},
          PLANT_DENSITY={1: 250}, METEO_FILENAME='meteo_CO2_800_T.csv',

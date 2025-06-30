@@ -16,8 +16,7 @@ if __name__ == '__main__':
     num_processes = mp.cpu_count() - 1
     p = mp.Pool(num_processes)
 
-    mp_solutions = p.map(run_fspmwheat.run_fspmwheat, [1, 3, 17])
-    # mp_solutions = p.map(run_fspmwheat.run_fspmwheat, [18, 19, 20])
+    mp_solutions = p.map(run_fspmwheat.run_fspmwheat, [6, 7, 8])
 
     p.terminate()
     p.join()
